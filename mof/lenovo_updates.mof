@@ -1,0 +1,10 @@
+[SMS_Report, SMS_Group_Name("Lenovo_Updates"), SMS_Class_Id("Lenovo_Updates"),Namespace ("root\\\\Lenovo")]
+class Lenovo_Updates: SMS_Class_Template
+{
+ [key, SMS_Report] string PackageID;
+ [SMS_Report] string Title;
+ [SMS_Report] string Status;
+ [SMS_Report] string AdditionalInfo;
+ [SMS_Report] string Version;
+ [SMS_Report] string Severity;
+};
