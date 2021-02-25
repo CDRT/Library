@@ -94,6 +94,13 @@ param (
     [string]$Password
 )
 
+# For Intune detection method.
+if (!(Test-Path -Path "$($env:ProgramData)\Lenovo\ThinkShield"))
+    {
+        New-Item -Path "$($env:ProgramData)\Lenovo\ThinkShield" -ItemType Directory
+    }
+Set-Content -Path "$($env:ProgramData)\Lenovo\ThinkShield\SecureWipe.tag" -Value "Secure Wipe Pending"
+
 $CimInstance = Get-CimInstance -Namespace root/WMI -ClassName Lenovo_ExecSecureWipe
 $Arguments = @{Parameter = "Drv1,$EraseMethod,$PasswordType,$Password" }
 
@@ -101,6 +108,7 @@ try {
     $SecureWipe = $CimInstance | Invoke-CimMethod -MethodName ExecSecureWipe -Arguments $Arguments
     if ($SecureWipe.return -eq 'Success') {
         Write-Output 'Reboot system to complete ThinkShield Secure Wipe'
+        # Will prompt for a reboot.  Can be changed to 0
         Exit 3010
     }
     else {
