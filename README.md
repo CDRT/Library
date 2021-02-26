@@ -7,10 +7,7 @@ This repository will contain scripts and files shared for administrators to use 
 ## The Solutions ##
 Solution | Description
 ---------|------------
-MOF | This folder in the library contains MOF files that can be used to extend the hardware inventory of Configuration Manager to collect data from custom WMI classes.
-* Odometer: Represents the metrics collected from supported systems showing data such as CPU Uptime, Accelerometer Shock events, Thermal events, etc.
-* Lenovo Updates: Collects the updates history as stored by Lenovo System Update, Thin Installer, or Commercial Vantage
-
+MOF | This folder in the library contains MOF files that can be used to extend the hardware inventory of Configuration Manager to collect data from custom WMI classes.* Odometer: Represents the metrics collected from supported systems showing data such as CPU Uptime, Accelerometer Shock events, Thermal events, etc. * Lenovo Updates: Collects the updates history as stored by Lenovo System Update, Thin Installer, or Commercial Vantage
 Odometer | This script collects and itnerprets the raw Odometer data and stores it in a custom WMI class.  A MOF file for this custom class is provided in the mof folder of the Library.
 Secure Wipe | This script can be leveraged from Configuration Manager or Intune to initiate a ThinkShield secure wipe from BIOS on supported systems. Upon reboot after this script executes on a device, a secure wipe will be performed by BIOS based on the criteria specified from the script which can be customized to fit your needs.
 
