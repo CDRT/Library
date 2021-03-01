@@ -32,7 +32,7 @@ function Verify-XmlSignature {
 }
 
 # set working directory for production
-# $wd = "C:\ProgramData\Intel\TrustedDeviceSetup\"
+$wd = "C:\ProgramData\Intel\TrustedDeviceSetup\"
 Set-Location -Path $wd
 
 
