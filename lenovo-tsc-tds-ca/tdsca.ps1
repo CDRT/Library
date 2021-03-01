@@ -31,8 +31,6 @@ function Verify-XmlSignature {
     return $signedXml.CheckSignature()
 }
 
-# set working directory for testing
-$wd = "C:\git\cdrt\lenovo-tsc-tds-ca\"
 # set working directory for production
 # $wd = "C:\ProgramData\Intel\TrustedDeviceSetup\"
 Set-Location -Path $wd
