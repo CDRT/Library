@@ -3,7 +3,7 @@ layout: default
 title: CDRT Library
 ---
 
-# Welcome to CDRT Library
+# Welcome to the Library
 
 This repository will contain scripts and files shared for administrators to use in the management and configuration of their Lenovo commercial PC products. 
 
