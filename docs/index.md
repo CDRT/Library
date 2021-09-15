@@ -10,7 +10,7 @@ This repository will contain documentation, scripts and files shared for adminis
 ## Index ##
 
 | Item | Description |
-| [scriptstore](/Library/scriptstore/) | Collection of PowerShell scripts and MOF files to help manage Lenovo PC's |
+| [Script Store](/Library/scriptstore.html/) | Collection of PowerShell scripts and MOF files to help manage Lenovo PC's |
 | Dock Deployment Guide | Reference guide for Lenovo Docks with guidance on deploying and maintaining |
 | | |
 
