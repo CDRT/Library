@@ -1,0 +1,39 @@
+[ SMS_Report (TRUE),
+  SMS_Group_Name ("Lenovo_WarrantyElement"),
+  SMS_Class_ID ("Lenovo_WarrantyElement"),
+  Namespace ("root\\\\lenovo") ]
+class Lenovo_WarrantyElement : SMS_Class_Template
+{
+    [ SMS_Report (TRUE), key ]
+    String     ID;
+    [ SMS_Report (TRUE) ]
+    String     Description;
+    [ SMS_Report (TRUE) ]
+    String     End;
+    [ SMS_Report (TRUE) ]
+    String     Name;
+    [ SMS_Report (TRUE) ]
+    String     Start;
+    [ SMS_Report (TRUE) ]
+    String     Type;
+};
+
+[ SMS_Report (TRUE),
+  SMS_Group_Name ("Lenovo_WarrantyInformation"),
+  SMS_Class_ID ("Lenovo_WarrantyInformation"),
+  Namespace ("root\\\\lenovo") ]
+class Lenovo_WarrantyInformation : SMS_Class_Template
+{
+    [ SMS_Report (TRUE), key ]
+    String     SerialNumber;
+    [ SMS_Report (TRUE) ]
+    String     EndDate;
+    [ SMS_Report (TRUE) ]
+    String     LastUpdateTime;
+    [ SMS_Report (TRUE) ]
+    String     Product;
+    [ SMS_Report (TRUE) ]
+    String     StartDate;
+    [ SMS_Report (TRUE) ]
+    String     Warranty[];
+};
