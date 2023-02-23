@@ -30,20 +30,20 @@ has been advised of the possibility of such damages.
   Mandatory: True
   Data type: String
   Must be a string of machine type ids separated with comma and surrounded
-  by double-quotes. Although multiple machine types can be specified, it is
+  by single quotes. Although multiple machine types can be specified, it is
   recommended to keep the list small to reduce download times for all updates.
 
   .PARAMETER OS
   Mandatory: True
   Data type: String
-  Must be a string of "10" or "11". The default if no value is specified will
+  Must be a string of '10' or '11'. The default if no value is specified will
   be 10.
 
   .PARAMETER PackageTypes
   Mandatory: False
   Data type: String
-  Must be a string of Package Type integers separated by commas. The possible
-  values are:
+  Must be a string of Package Type integers separated by commas and surrounded 
+  by single quotes. The possible values are:
   1: Application
   2: Driver
   3: BIOS
@@ -54,7 +54,8 @@ has been advised of the possibility of such damages.
   .PARAMETER RebootTypes
   Mandatory: False
   Data type: String
-  Must be a string of integers representing the different boot types:
+  Must be a string of integers, separated by commas, representing the different
+  boot types and surrounded by single quotes:
   0: No reboot required
   1: Forces a reboot (not recommended in a task sequence)
   3: Requires a reboot (but does not initiate it)
@@ -66,13 +67,13 @@ has been advised of the possibility of such damages.
   Mandatory: True
   Data type: string
   Must be a fully qualified path to the folder where the local repository
-  will be saved. Must be surrounded by double-quotes.
+  will be saved. Must be surrounded by single quotes.
 
   .PARAMETER LogPath
   Mandatory: False
   Data type: String
   Must be a fully qualified path. If not specified, ti-auto-repo.log will be stored in
-  the repository folder. Must be surrounded by double-quotes.
+  the repository folder. Must be surrounded by single quotes.
 
   .INPUTS
   None.
