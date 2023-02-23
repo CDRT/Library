@@ -39,6 +39,29 @@ has been advised of the possibility of such damages.
   Must be a string of "10" or "11". The default if no value is specified will
   be 10.
 
+  .PARAMETER PackageTypes
+  Mandatory: False
+  Data type: String
+  Must be a string of Package Type integers separated by commas. The possible
+  values are:
+  1: Application
+  2: Driver
+  3: BIOS
+  4: Firmware
+  
+  The default if no value is specified will be all package types.
+
+  .PARAMETER RebootTypes
+  Mandatory: False
+  Data type: String
+  Must be a string of integers representing the different boot types:
+  0: No reboot required
+  1: Forces a reboot (not recommended in a task sequence)
+  3: Requires a reboot (but does not initiate it)
+  4: Forces a shutdown (not used much anymore)
+  5: Delayed forced reboot (used by many firmware updates)
+  The default if no value is specified will all RebootTypes.
+
   .PARAMETER RepositoryPath
   Mandatory: True
   Data type: string
@@ -413,7 +436,7 @@ $global:rt = @()
 if ($RebootTypes -ne '') {
     $global:rt = $RebootTypes.Split(',')
 } else {
-    $global:rt = @('0', '1', '3', '5')
+    $global:rt = @('0', '1', '3', '4', '5')
 }
 
 $global:pt = @()
