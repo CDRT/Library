@@ -47,19 +47,22 @@ has been advised of the possibility of such damages.
   3: Requires a reboot (but does not initiate it)
   4: Forces a shutdown (not used much anymore)
   5: Delayed forced reboot (used by many firmware updates)
-  The default if no value is specified will all RebootTypes.
+  If no value is specified, the default is all RebootTypes.
 
   .PARAMETER RepositoryPath
   Mandatory: True
   Data type: string
   Must be a fully qualified path to the folder where the local repository
-  will be saved. Must be surrounded by double-quotes.
+  will be saved. Must be surrounded by single quotes.
 
   .PARAMETER LogPath
   Mandatory: False
   Data type: String
   Must be a fully qualified path. If not specified, ti-auto-repo.log will be stored in
-  the repository folder. Must be surrounded by double-quotes.
+  the repository folder. Must be surrounded by single quotes.
+
+  .EXAMPLE
+  Get-LnvUpdatesRepo.ps1 -RepositoryPath 'C:\Program Files (x86)\Lenovo\ThinInstaller\Repository' -PackageTypes '1,2' -RebootTypes '0,3'
 
   .INPUTS
   None.
