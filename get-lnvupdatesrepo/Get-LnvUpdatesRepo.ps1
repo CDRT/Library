@@ -27,17 +27,19 @@ has been advised of the possibility of such damages.
   get the latest update packages. 
 
   .PARAMETER MachineTypes
-  Mandatory: True
+  Mandatory: False
   Data type: String
   Must be a string of machine type ids separated with comma and surrounded
   by single quotes. Although multiple machine types can be specified, it is
   recommended to keep the list small to reduce download times for all updates.
+  If no value is specified, the machine type of the device running the script
+  will be used.
 
   .PARAMETER OS
-  Mandatory: True
+  Mandatory: False
   Data type: String
   Must be a string of '10' or '11'. The default if no value is specified will
-  be 10.
+  be determined by the OS of the device the script is running on.
 
   .PARAMETER PackageTypes
   Mandatory: False
@@ -61,7 +63,7 @@ has been advised of the possibility of such damages.
   3: Requires a reboot (but does not initiate it)
   4: Forces a shutdown (not used much anymore)
   5: Delayed forced reboot (used by many firmware updates)
-  The default if no value is specified will all RebootTypes.
+  The default if no value is specified will be all RebootTypes.
 
   .PARAMETER RepositoryPath
   Mandatory: True
@@ -75,6 +77,9 @@ has been advised of the possibility of such damages.
   Must be a fully qualified path. If not specified, ti-auto-repo.log will be stored in
   the repository folder. Must be surrounded by single quotes.
 
+ .EXAMPLE
+  Get-LnvUpdatesRepo.ps1 -RepositoryPath 'C:\Program Files (x86)\Lenovo\ThinInstaller\Repository' -PackageTypes '1,2' -RebootTypes '0,3'
+
   .INPUTS
   None.
 
@@ -84,7 +89,7 @@ has been advised of the possibility of such damages.
 #>
 
 Param(
-  [Parameter(Mandatory = $True)]
+  [Parameter(Mandatory = $False)]
   [string]$MachineTypes,
 
   [Parameter(Mandatory = $False)]
@@ -103,7 +108,6 @@ Param(
   [string]$LogPath
 )
 
-#region Main script block
 #region Parameters validation
 function Confirm-ParameterPattern {
   [CmdletBinding()]
@@ -122,9 +126,7 @@ function Confirm-ParameterPattern {
     $result = $Value -match $RegEx
 
     if ($result -ne $True) {
-      Write-Output($ErrorMessage)
-
-      exit 1
+      Write-Output($ErrorMessage); Exit 1
     }
   }
 }
@@ -267,9 +269,18 @@ function Confirm-Parameters {
       -ErrorMessage "LogPath parameter must be a properly formatted and fully qualified path to file"
   
     $trimmedMachineTypes = $MachineTypes.Trim()
-    $global:MachineTypesArray = $trimmedMachineTypes -split ',' -replace '^\s+|\s+$'
+    if ($trimmedMachineTypes -eq '') {
+      if ((Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_ComputerSystemProduct).Vendor.ToLower -eq 'lenovo') {
+        Write-LogError "This script is only supported on Lenovo commercial PC products."; Exit 1
+      }
+      $trimmedMachineType = (Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_ComputerSystemProduct).Name.Substring(0, 4).Trim()
+      $global:MachineTypesArray = $trimmedMachineType
+    } else {
+       $global:MachineTypesArray = $trimmedMachineTypes -split ',' -replace '^\s+|\s+$'
+    }
+   
     if ($global:MachineTypesArray.Length -eq 0) {
-      Write-LogError "MachineTypes parameter must contain at least one four character machine type of a Lenovo PC."
+      Write-LogError "MachineTypes parameter must contain at least one four character machine type of a Lenovo PC."; Exit 1
     }
   }
 #endregion
@@ -449,8 +460,15 @@ if ($PackageTypes -ne '') {
 
 #get OS - if not specified or not one of 11 or 10, then default to 10
 if ($OS -eq '') {
+  $OS = (Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_OperatingSystem).Version
+  if ($OS -match '10.0.1') {
     $global:OS = "Win10"
-    $global:OSName = "Windows 10"    
+    $global:OSName = "Windows 10"  
+  }
+  elseif ($OS -match '10.0.2') {
+    $global:OS = "Win11"
+    $global:OSName = "Windows 11"
+  }  
 } elseif ($OS -eq '10') {
     $global:OS = "Win10"
     $global:OSName = "Windows 10"
@@ -466,9 +484,6 @@ if ($LogPath -eq "") {
   $LogPath = "$RepositoryPath\ti-auto-repo.log"
 }
 #endregion
-
-###################################
-#start main
 
 try {
   
@@ -491,9 +506,7 @@ New-Item -ItemType "directory" -Force $RepositoryPath | Out-Null
 
 $repositoryFolderExists = Test-Path -Path $RepositoryPath
 if ($repositoryFolderExists -eq $False) {
-Write-LogError("Failed to create folder at the following path $RepositoryPath")
-
-exit 1
+Write-LogError("Failed to create folder at the following path $RepositoryPath"); Exit 1
 }
 
 #1.1 Create database.xsd file
@@ -520,9 +533,7 @@ foreach ($mt in $global:MachineTypesArray) {
       $catalogUrl = "https://download.lenovo.com/catalog/$mt`_$global:OS.xml"
       $catalog = Get-XmlFile -Url $catalogUrl
       if (!$catalog) {
-          Write-LogError "Failed to download the updates catalog from $catalogUrl. Check that $mt is a valid machine type."
-
-          exit 1
+          Write-LogError "Failed to download the updates catalog from $catalogUrl. Check that $mt is a valid machine type."; Exit 1
       }
 
       #2.1. Get of URLs for package descriptors that match PackageIds
@@ -570,9 +581,7 @@ foreach ($mt in $global:MachineTypesArray) {
 
                 $packageFolderExists = Test-Path -Path $packagePath
                 if ($packageFolderExists -eq $False) {
-                    Write-LogError("Failed to create folder at the following path $RepositoryPath\$packageId")
-
-                    exit 1
+                    Write-LogError("Failed to create folder at the following path $RepositoryPath\$packageId"); Exit 1
                 }
                 Write-LogInformation("Getting $packageID...")
                 #Gather data needed for dbxml
@@ -710,8 +719,5 @@ Write-LogInformation "Script execution finished."
 
 }
 catch {
-  Write-LogError "Unexpected error occurred:`n $_"
-
-  exit 1
+  Write-LogError "Unexpected error occurred:`n $_"; Exit 1
 }
-#endregion
