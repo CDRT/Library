@@ -1,0 +1,53 @@
+[ SMS_Report (FALSE),
+  SMS_Group_Name ("Lenovo_Battery"),
+  SMS_Class_ID ("Lenovo_Battery"),
+  Namespace ("root\\\\lenovo") ]
+class Lenovo_Battery : SMS_Class_Template
+{
+    [ SMS_Report (FALSE), key ]
+    String     BatteryID;
+    [ SMS_Report (FALSE) ]
+    String     Adapter;
+    [ SMS_Report (FALSE) ]
+    String     BarCode;
+    [ SMS_Report (FALSE) ]
+    String     BatteryHealth;
+    [ SMS_Report (FALSE) ]
+    String     ChargeCompletionTime;
+    [ SMS_Report (FALSE) ]
+    String     Condition;
+    [ SMS_Report (FALSE) ]
+    String     CycleCount;
+    [ SMS_Report (FALSE) ]
+    String     DesignCapacity;
+    [ SMS_Report (FALSE) ]
+    String     DesignVoltage;
+    [ SMS_Report (FALSE) ]
+    String     DeviceChemistry;
+    [ SMS_Report (FALSE) ]
+    String     FirmwareVersion;
+    [ SMS_Report (FALSE) ]
+    String     FirstUseDate;
+    [ SMS_Report (FALSE) ]
+    String     FRUPartNumber;
+    [ SMS_Report (FALSE) ]
+    String     FullChargeCapacity;
+    [ SMS_Report (FALSE) ]
+    String     ManufactureDate;
+    [ SMS_Report (FALSE) ]
+    String     Manufacturer;
+    [ SMS_Report (FALSE) ]
+    String     RemainingCapacity;
+    [ SMS_Report (FALSE) ]
+    String     RemainingPercentage;
+    [ SMS_Report (FALSE) ]
+    String     RemainingTime;
+    [ SMS_Report (FALSE) ]
+    String     Status;
+    [ SMS_Report (FALSE) ]
+    String     Temperature;
+    [ SMS_Report (FALSE) ]
+    String     Voltage;
+    [ SMS_Report (FALSE) ]
+    String     Wattage;
+};
