@@ -74,12 +74,24 @@ has been advised of the possibility of such damages.
   .PARAMETER LogPath
   Mandatory: False
   Data type: String
-  Must be a fully qualified path. If not specified, ti-auto-repo.log will be stored in
-  the repository folder. Must be surrounded by single quotes.
+  Must be a fully qualified path. If not specified, ti-auto-repo.log will be 
+  stored in the repository folder. Must be surrounded by single quotes.
 
- .EXAMPLE
+  .PARAMETER RT5toRT3
+  Mandatory: False
+  Data type: Switch
+  Specify this parameter if you want to convert Reboot Type 5 (Delayed Forced 
+  Reboot) packages to be Reboot Type 3 (Requires Reboot). Only do this in
+  task sequence scenarios where a Restart can be performed after the Thin
+  Installer task. Use the -noreboot parameter on the Thin Installer command
+  line to suppress reboot to allow the task sequence to control the restart.
+
+  .EXAMPLE
   Get-LnvUpdatesRepo.ps1 -RepositoryPath 'C:\Program Files (x86)\Lenovo\ThinInstaller\Repository' -PackageTypes '1,2' -RebootTypes '0,3'
-
+  
+  .EXAMPLE
+  Get-LnvUpdatesRepo.ps1 -RepositoryPath 'Z:\21DD' -PackageTypes '1,2,3' -RebootTypes '0,3,5' -RT5toRT3
+ 
   .INPUTS
   None.
 
@@ -105,7 +117,10 @@ Param(
   [string]$RepositoryPath,
   
   [Parameter(Mandatory = $False)]
-  [string]$LogPath
+  [string]$LogPath,
+
+  [Parameter(Mandatory = $False)]
+  [switch]$RT5toRT3
 )
 
 #region Parameters validation
@@ -571,8 +586,6 @@ foreach ($mt in $global:MachineTypesArray) {
                 break
             }
             
-            #skip reboot type 1 packages that force reboot and will break task sequence
-            
             if (($global:rt -contains $pkgXML.Package.Reboot.type) -and ($global:pt -contains $pkgXML.Package.PackageType.type)) {
                 #Save package xml
                 #Create a subfolder using package ID as the folder name
@@ -596,6 +609,11 @@ foreach ($mt in $global:MachineTypesArray) {
                 $__localRepositoryPath = [IO.Path]::Combine($RepositoryPath, $__packageID, $__filename)
                 $__localpath = [IO.Path]::Combine("\", $__packageID, $__filename)
                 $__severity = $severities[$pkgXML.Package.Severity.type]
+
+                #alter Reboot Type 5 to 3 if RT5toRT3 is specified
+                if (($RT5toRT3) -and ($pkgXML.Package.Reboot.type -eq '5')) {
+                  $pkgXML.Package.Reboot.type = '3'
+                }
 
                 $pkgXML.Save($__localRepositoryPath)
 
