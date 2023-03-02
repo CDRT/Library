@@ -551,7 +551,7 @@ foreach ($mt in $global:MachineTypesArray) {
           Write-LogError "Failed to download the updates catalog from $catalogUrl. Check that $mt is a valid machine type."; Exit 1
       }
 
-      #2.1. Get of URLs for package descriptors that match PackageIds
+      #2.1. Get URLs for package descriptors that match PackageIds
       $packages = @{}
       $packagesUrls = $catalog.packages.package.location
 
