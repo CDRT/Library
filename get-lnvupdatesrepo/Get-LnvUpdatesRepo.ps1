@@ -86,6 +86,13 @@ has been advised of the possibility of such damages.
   Installer task. Use the -noreboot parameter on the Thin Installer command
   line to suppress reboot to allow the task sequence to control the restart.
 
+  .PARAMETER ScanOnly
+  Mandatory: False
+  Data type: Switch
+  Specify this parameter to create a repository that only contains the package
+  descriptor XML and external detection routine files to be used with Thin 
+  Installer's SCAN action.
+
   .EXAMPLE
   Get-LnvUpdatesRepo.ps1 -RepositoryPath 'C:\Program Files (x86)\Lenovo\ThinInstaller\Repository' -PackageTypes '1,2' -RebootTypes '0,3'
   
@@ -120,7 +127,10 @@ Param(
   [string]$LogPath,
 
   [Parameter(Mandatory = $False)]
-  [switch]$RT5toRT3
+  [switch]$RT5toRT3,
+
+  [Parameter(Mandatory = $False)]
+  [switch]$ScanOnly
 )
 
 #region Parameters validation
@@ -585,7 +595,7 @@ foreach ($mt in $global:MachineTypesArray) {
 
                 break
             }
-            
+            #Filter by Package Type and Reboot Type
             if (($global:rt -contains $pkgXML.Package.Reboot.type) -and ($global:pt -contains $pkgXML.Package.PackageType.type)) {
                 #Save package xml
                 #Create a subfolder using package ID as the folder name
@@ -617,9 +627,32 @@ foreach ($mt in $global:MachineTypesArray) {
 
                 $pkgXML.Save($__localRepositoryPath)
 
-                #Load package descriptor XML and download each of the files referenced under the <Files> tag.
+                #Load package descriptor XML and download each of the files referenced under the <Files> tag. Skip Installer if -ScanOnly specified.
                 #Note that the files will be located at the same relative path as the package descriptor XML on https://download.lenovo.com/...
-                $fileNameElements = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("File")
+                $fileNameElements = @()
+                $installerFile = @()
+                $readmeFile = @()
+                $externalFiles = @()
+                Write-LogInformation("Get files for downloading...")
+                $installerFile = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("Installer").GetElementsByTagName("File")
+                try {
+                  $readmeFile = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("Readme").GetElementsByTagName("File")
+                } catch {
+                  Write-LogInformation("No readme file specified.")
+                }
+                try {
+                  $externalFiles = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("External").GetElementsByTagName("File")
+                } catch {
+                  Write-LogInformation("No external detection files specified.")
+                }
+                
+                if ($readmeFile) { $fileNameElements += $readmeFile }
+                if ($externalFiles) { $fileNameElements += $externalFiles }
+                
+                if (-Not ($ScanOnly)) {
+                  $fileNameElements += $installerFile
+                }
+                #$fileNameElements = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("File")
                 foreach ($element in $fileNameElements) {
                     $filename = $element.GetElementsByTagName("Name").InnerText
                     $expectedFileSize = $element.GetElementsByTagName("Size").InnerText
