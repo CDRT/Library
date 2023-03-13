@@ -85,6 +85,8 @@ has been advised of the possibility of such damages.
   task sequence scenarios where a Restart can be performed after the Thin
   Installer task. Use the -noreboot parameter on the Thin Installer command
   line to suppress reboot to allow the task sequence to control the restart.
+  NOTE: This parameter can only be used when Thin Installer will be processing
+  the updates in the repository.
 
   .PARAMETER ScanOnly
   Mandatory: False
