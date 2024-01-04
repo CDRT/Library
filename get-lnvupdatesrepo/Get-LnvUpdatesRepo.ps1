@@ -136,7 +136,8 @@ Param(
 )
 
 #region Parameters validation
-function Confirm-ParameterPattern {
+function Confirm-ParameterPattern
+{
   [CmdletBinding()]
   param(
     [Parameter(Mandatory = $True)]
@@ -149,10 +150,12 @@ function Confirm-ParameterPattern {
     [string]$ErrorMessage
   )
 
-  if ($Value) {
+  if ($Value)
+  {
     $result = $Value -match $RegEx
 
-    if ($result -ne $True) {
+    if ($result -ne $True)
+    {
       Write-Output($ErrorMessage); Exit 1
     }
   }
@@ -160,39 +163,43 @@ function Confirm-ParameterPattern {
 #endregion
 
 #region Messages
-function Write-LogError {
+function Write-LogError
+{
   Param(
     [Parameter(Mandatory = $True)]
     [string]$Message
   )
-    $logline = "[LNV_ERROR_$((Get-Date).ToString("yyyy-MM-ddTHH:mm:ss"))]: $Message" 
-    Out-File -FilePath "$LogPath" -InputObject $logline -Append -NoClobber -Force
+  $logline = "[LNV_ERROR_$((Get-Date).ToString("yyyy-MM-ddTHH:mm:ss"))]: $Message" 
+  Out-File -FilePath "$LogPath" -InputObject $logline -Append -NoClobber -Force
   return $logline
 }
 
-function Write-LogWarning {
+function Write-LogWarning
+{
   Param(
     [Parameter(Mandatory = $True)]
     [string]$Message
   )
-    $logline = "[LNV_WARNING_$((Get-Date).ToString("yyyy-MM-ddTHH:mm:ss"))]: $Message"
-    Out-File -FilePath "$LogPath" -InputObject $logline -Append -NoClobber
+  $logline = "[LNV_WARNING_$((Get-Date).ToString("yyyy-MM-ddTHH:mm:ss"))]: $Message"
+  Out-File -FilePath "$LogPath" -InputObject $logline -Append -NoClobber
   return $logline
 }
 
-function Write-LogInformation {
+function Write-LogInformation
+{
   Param(
     [Parameter(Mandatory = $True)]
     [string]$Message
   )
-    $logline = "[LNV_INFORMATION_$((Get-Date).ToString("yyyy-MM-ddTHH:mm:ss"))]: $Message"
-    Out-File -FilePath "$LogPath" -InputObject $logline -Append -NoClobber
+  $logline = "[LNV_INFORMATION_$((Get-Date).ToString("yyyy-MM-ddTHH:mm:ss"))]: $Message"
+  Out-File -FilePath "$LogPath" -InputObject $logline -Append -NoClobber
   return $logline 
 }
 #endregion
 
 #region helpers
-function Get-XmlFile {
+function Get-XmlFile
+{
   Param(
     [Parameter(Mandatory = $True)]
     [string]$Url
@@ -204,16 +211,21 @@ function Get-XmlFile {
   $stop = $false
   $retryCount = 0
  
-  do {
-    try {
+  do
+  {
+    try
+    {
       [System.XML.XMLDocument]$xmlFile = (New-Object System.Net.WebClient).DownloadString($Url)
       $stop = $true
     }
-    catch {
-      if ($retrycount -gt 3) {
+    catch
+    {
+      if ($retrycount -gt 3)
+      {
         $stop = $true
       }
-      else {
+      else
+      {
         Start-Sleep -Seconds 5
         $retrycount = $retrycount + 1
       }
@@ -224,7 +236,8 @@ function Get-XmlFile {
   return $xmlFile
 }
 
-function Get-File {
+function Get-File
+{
   Param(
     [Parameter(Mandatory = $True)]
     [string]$Url,
@@ -240,40 +253,50 @@ function Get-File {
   $stop = $false
   $retryCount = 0
  
-  do {
-    try {
+  do
+  {
+    try
+    {
         (New-Object System.Net.WebClient).DownloadFile($Url, $DestinationPath)
 
       #Check file size and CRC and delete the folder if they are not equal
-      $actualFileCRC = $(Get-FileHash -Path $DestinationPath -Algorithm  SHA256).Hash
+      $actualFileCRC = $(Get-FileHash -Path $DestinationPath -Algorithm SHA256).Hash
       $actualFileSize = $(Get-Item -Path $DestinationPath).Length
 
       #Return if the file is .txt
       $extension = [IO.Path]::GetExtension($DestinationPath)
-      if ($extension -eq ".txt" ) {
+      if ($extension -eq ".txt" )
+      {
         $stop = $true
         return $true
       }
 
-      if ($actualFileCRC -eq $ExpectedFileCRC -and $ExpectedFileSize -eq $actualFileSize) {
+      if ($actualFileCRC -eq $ExpectedFileCRC -and $ExpectedFileSize -eq $actualFileSize)
+      {
         $stop = $true
         return $true
       }
-      else {
-        if ($retrycount -gt 3) {
+      else
+      {
+        if ($retrycount -gt 3)
+        {
           $stop = $true
         }
-        else {
+        else
+        {
           Start-Sleep -Seconds 5
           $retrycount = $retrycount + 1
         }
       } 
     }
-    catch {
-      if ($retrycount -gt 3) {
+    catch
+    {
+      if ($retrycount -gt 3)
+      {
         $stop = $true
       }
-      else {
+      else
+      {
         Start-Sleep -Seconds 5
         $retrycount = $retrycount + 1
       }
@@ -284,32 +307,38 @@ function Get-File {
   return $false
 }
 
-function Confirm-Parameters {
-    Confirm-ParameterPattern -Value $RepositoryPath `
-      -Mandatory $True `
-      -RegEx "^((?:~?\/)|(?:(?:\\\\\?\\)?[a-zA-Z]+\:))(?:\/?(.*))?$" `
-      -ErrorMessage "RepositoryPath parameter must be a properly formatted and fully qualified path to an existing folder where the local repository resides."
+function Confirm-Parameters
+{
+  Confirm-ParameterPattern -Value $RepositoryPath `
+    -Mandatory $True `
+    -RegEx "^((?:~?\/)|(?:(?:\\\\\?\\)?[a-zA-Z]+\:))(?:\/?(.*))?$" `
+    -ErrorMessage "RepositoryPath parameter must be a properly formatted and fully qualified path to an existing folder where the local repository resides."
   
-    Confirm-ParameterPattern -Value $LogPath `
-      -Mandatory $False `
-      -RegEx "^((?:~?\/)|(?:(?:\\\\\?\\)?[a-zA-Z]+\:))(?:\/?(.*))?$" `
-      -ErrorMessage "LogPath parameter must be a properly formatted and fully qualified path to file"
+  Confirm-ParameterPattern -Value $LogPath `
+    -Mandatory $False `
+    -RegEx "^((?:~?\/)|(?:(?:\\\\\?\\)?[a-zA-Z]+\:))(?:\/?(.*))?$" `
+    -ErrorMessage "LogPath parameter must be a properly formatted and fully qualified path to file"
   
-    $trimmedMachineTypes = $MachineTypes.Trim()
-    if ($trimmedMachineTypes -eq '') {
-      if ((Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_ComputerSystemProduct).Vendor.ToLower -eq 'lenovo') {
-        Write-LogError "This script is only supported on Lenovo commercial PC products."; Exit 1
-      }
-      $trimmedMachineType = (Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_ComputerSystemProduct).Name.Substring(0, 4).Trim()
-      $global:MachineTypesArray = $trimmedMachineType
-    } else {
-       $global:MachineTypesArray = $trimmedMachineTypes -split ',' -replace '^\s+|\s+$'
+  $trimmedMachineTypes = $MachineTypes.Trim()
+  if ($trimmedMachineTypes -eq '')
+  {
+    if ((Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_ComputerSystemProduct).Vendor.ToLower -eq 'lenovo')
+    {
+      Write-LogError "This script is only supported on Lenovo commercial PC products."; Exit 1
     }
-   
-    if ($global:MachineTypesArray.Length -eq 0) {
-      Write-LogError "MachineTypes parameter must contain at least one four character machine type of a Lenovo PC."; Exit 1
-    }
+    $trimmedMachineType = (Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_ComputerSystemProduct).Name.Substring(0, 4).Trim()
+    $global:MachineTypesArray = $trimmedMachineType
   }
+  else
+  {
+    $global:MachineTypesArray = $trimmedMachineTypes -split ',' -replace '^\s+|\s+$'
+  }
+   
+  if ($global:MachineTypesArray.Length -eq 0)
+  {
+    Write-LogError "MachineTypes parameter must contain at least one four character machine type of a Lenovo PC."; Exit 1
+  }
+}
 #endregion
 
 #region globals
@@ -472,305 +501,360 @@ $global:MachineTypesArray = $null
 
 $global:rt = @()
 
-if ($RebootTypes -ne '') {
-    $global:rt = $RebootTypes.Split(',')
-} else {
-    $global:rt = @('0', '1', '3', '4', '5')
+if ($RebootTypes -ne '')
+{
+  $global:rt = $RebootTypes.Split(',')
+}
+else
+{
+  $global:rt = @('0', '1', '3', '4', '5')
 }
 
 $global:pt = @()
-if ($PackageTypes -ne '') {
-    $global:pt = $PackageTypes.Split(',')
-} else {
-    $global:pt = @('1','2','3','4')
+if ($PackageTypes -ne '')
+{
+  $global:pt = $PackageTypes.Split(',')
+}
+else
+{
+  $global:pt = @('1', '2', '3', '4')
 }
 
 #get OS - if not specified or not one of 11 or 10, then default to 10
-if ($OS -eq '') {
+if ($OS -eq '')
+{
   $OS = (Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_OperatingSystem).Version
-  if ($OS -match '10.0.1') {
+  if ($OS -match '10.0.1')
+  {
     $global:OS = "Win10"
     $global:OSName = "Windows 10"  
   }
-  elseif ($OS -match '10.0.2') {
+  elseif ($OS -match '10.0.2')
+  {
     $global:OS = "Win11"
     $global:OSName = "Windows 11"
   }  
-} elseif ($OS -eq '10') {
-    $global:OS = "Win10"
-    $global:OSName = "Windows 10"
-} elseif ($OS -eq '11') {
-    $global:OS = "Win11"
-    $global:OSName = "Windows 11"
-} else {
-    $global:OS = "Win10"
-    $global:OSName = "Windows 10"
+}
+elseif ($OS -eq '10')
+{
+  $global:OS = "Win10"
+  $global:OSName = "Windows 10"
+}
+elseif ($OS -eq '11')
+{
+  $global:OS = "Win11"
+  $global:OSName = "Windows 11"
+}
+else
+{
+  $global:OS = "Win10"
+  $global:OSName = "Windows 10"
 }
 
-if ($LogPath -eq "") {
+if ($LogPath -eq "")
+{
   $LogPath = "$RepositoryPath\ti-auto-repo.log"
 }
 #endregion
 
-try {
+try
+{
   
   Confirm-Parameters
   
-# What to do if repository folder already exists 
-# Comment and uncomment lines in the if clause below to achieve desired behavior.
-$repositoryFolderExists = Test-Path -Path $RepositoryPath
-if ($repositoryFolderExists -eq $True) {
-  # repopulate each time with latest content
-  Remove-Item $RepositoryPath -Recurse
+  # What to do if repository folder already exists 
+  # Comment and uncomment lines in the if clause below to achieve desired behavior.
+  $repositoryFolderExists = Test-Path -Path $RepositoryPath
+  if ($repositoryFolderExists -eq $True)
+  {
+    # repopulate each time with latest content
+    Remove-Item $RepositoryPath -Recurse
 
-  # exit script and use existing repo
-  #Write-LogInformation "Exiting script as repo already exists."
-  #Exit
-}
+    # exit script and use existing repo
+    #Write-LogInformation "Exiting script as repo already exists."
+    #Exit
+  }
 
-#1 Prepare repository location
-New-Item -ItemType "directory" -Force $RepositoryPath | Out-Null
+  #1 Prepare repository location
+  New-Item -ItemType "directory" -Force $RepositoryPath | Out-Null
 
-$repositoryFolderExists = Test-Path -Path $RepositoryPath
-if ($repositoryFolderExists -eq $False) {
-Write-LogError("Failed to create folder at the following path $RepositoryPath"); Exit 1
-}
+  $repositoryFolderExists = Test-Path -Path $RepositoryPath
+  if ($repositoryFolderExists -eq $False)
+  {
+    Write-LogError("Failed to create folder at the following path $RepositoryPath"); Exit 1
+  }
 
-#1.1 Create database.xsd file
-[System.XML.XMLDocument]$dbxsd = New-Object System.Xml.XmlDocument
-$dbxsd.LoadXml($dbxsd_text)
-$databaseXsdPath = Join-Path -Path $RepositoryPath -ChildPath "database.xsd"
-$dbxsd.Save($databaseXsdPath)
+  #1.1 Create database.xsd file
+  [System.XML.XMLDocument]$dbxsd = New-Object System.Xml.XmlDocument
+  $dbxsd.LoadXml($dbxsd_text)
+  $databaseXsdPath = Join-Path -Path $RepositoryPath -ChildPath "database.xsd"
+  $dbxsd.Save($databaseXsdPath)
 
-#1.2 Create an XML document object to contain database.xml
-#Array of severities to translate integer into string
-$severities = @("None", "Critical", "Recommended", "Optional")
+  #1.2 Create an XML document object to contain database.xml
+  #Array of severities to translate integer into string
+  $severities = @("None", "Critical", "Recommended", "Optional")
 
-#Initialize dbxml
-[System.XML.XMLDocument]$dbxml = New-Object System.Xml.XmlDocument
-$xmldecl = $dbxml.CreateXmlDeclaration("1.0", "UTF-8", $null)
-[System.XML.XMLElement]$dbxmlRoot = $dbxml.CreateElement("Database")
-$dbxml.InsertBefore($xmldecl, $dbxml.DocumentElement) | Out-Null
-$dbxml.AppendChild($dbxmlRoot) | Out-Null
-$dbxmlRoot.SetAttribute("version", "301") | Out-Null
+  #Initialize dbxml
+  [System.XML.XMLDocument]$dbxml = New-Object System.Xml.XmlDocument
+  $xmldecl = $dbxml.CreateXmlDeclaration("1.0", "UTF-8", $null)
+  [System.XML.XMLElement]$dbxmlRoot = $dbxml.CreateElement("Database")
+  $dbxml.InsertBefore($xmldecl, $dbxml.DocumentElement) | Out-Null
+  $dbxml.AppendChild($dbxmlRoot) | Out-Null
+  $dbxmlRoot.SetAttribute("version", "301") | Out-Null
 
-#2. Download the updates catalog from https://download.lenovo.com/catalog/<mt>_<os>.xml
-foreach ($mt in $global:MachineTypesArray) {
-  if ($mt.Length -eq 4) {
+  #2. Download the updates catalog from https://download.lenovo.com/catalog/<mt>_<os>.xml
+  foreach ($mt in $global:MachineTypesArray)
+  {
+    if ($mt.Length -eq 4)
+    {
       $catalogUrl = "https://download.lenovo.com/catalog/$mt`_$global:OS.xml"
       $catalog = Get-XmlFile -Url $catalogUrl
-      if (!$catalog) {
-          Write-LogError "Failed to download the updates catalog from $catalogUrl. Check that $mt is a valid machine type."; Exit 1
+      if (!$catalog)
+      {
+        Write-LogError "Failed to download the updates catalog from $catalogUrl. Check that $mt is a valid machine type."; Exit 1
       }
 
       #2.1. Get URLs for package descriptors that match PackageIds
       $packages = @{}
       $packagesUrls = $catalog.packages.package.location
 
-      foreach ($url in $packagesUrls) {
-          $filename = $url.Substring($url.LastIndexOf("/") + 1)
-          $separatorIndex = $filename.IndexOf('.')
-          $packageID = $filename.Substring(0, $separatorIndex - 3)
+      foreach ($url in $packagesUrls)
+      {
+        $filename = $url.Substring($url.LastIndexOf("/") + 1)
+        $separatorIndex = $filename.IndexOf('.')
+        $packageID = $filename.Substring(0, $separatorIndex - 3)
 
-          $packages.Add($packageId, $url)
+        $packages.Add($packageId, $url)
       }
       
       $packagesCount = $packages.Count
       Write-LogInformation "Found packages for the system: $packagesCount"
 
-      if ($packagesCount -eq 0) {
-          Write-LogError "No updates found in the updates catalog"
+      if ($packagesCount -eq 0)
+      {
+        Write-LogError "No updates found in the updates catalog"
       }
 
-      if ($packagesCount -ne 0) {
+      if ($packagesCount -ne 0)
+      {
 
         #For each package, get package descriptor XML
-        foreach ($item in $packages.GetEnumerator()) {
-            $packageId = $item.Key
-            $url = $item.Value
+        foreach ($item in $packages.GetEnumerator())
+        {
+          $packageId = $item.Key
+          $url = $item.Value
 
-            #Download package descriptor XML to this subfolder
-            [xml] $pkgXML = Get-XmlFile -Url $url
-            if (!$pkgXml) {
-                Write-LogError "Failed to download the package descriptor from $url"
-                Remove-Item $packagePath -Recurse
+          #Download package descriptor XML to this subfolder
+          [xml] $pkgXML = Get-XmlFile -Url $url
+          if (!$pkgXml)
+          {
+            Write-LogError "Failed to download the package descriptor from $url"
+            Remove-Item $packagePath -Recurse
+
+            break
+          }
+
+          try
+          {
+            $packageID = $pkgXML.Package.id
+          }
+          catch
+          {
+            Write-LogError("Could not find package ID for $url")
+            break
+          }
+          
+          #Filter by Package Type and Reboot Type
+          if (($global:rt -contains $pkgXML.Package.Reboot.type) -and ($global:pt -contains $pkgXML.Package.PackageType.type))
+          {
+            #Save package xml
+            #Create a subfolder using package ID as the folder name
+            $packagePath = Join-Path -Path $RepositoryPath -ChildPath $packageId
+            New-Item -ItemType "directory" -Force $packagePath | Out-Null
+
+            $packageFolderExists = Test-Path -Path $packagePath
+            if ($packageFolderExists -eq $False)
+            {
+              Write-LogError("Failed to create folder at the following path $RepositoryPath\$packageId"); Exit 1
+            }
+            Write-LogInformation("Getting $packageID...")
+            #Gather data needed for dbxml
+            $__packageID = $pkgXML.Package.id
+            $__name = $pkgXML.Package.name
+            $__description = $pkgXML.Package.Title.Desc.InnerText
+            $__filename = $url.SubString($url.LastIndexOf('/') + 1)
+            $__version = $pkgXML.Package.version
+            $__releasedate = $pkgXML.Package.ReleaseDate
+            $__size = $pkgXML.Package.Files.Installer.File.Size
+            $__url = $url.SubString(0, $url.LastIndexOf('/') + 1)
+            $__localRepositoryPath = [IO.Path]::Combine($RepositoryPath, $__packageID, $__filename)
+            $__localpath = [IO.Path]::Combine("\", $__packageID, $__filename)
+            $__severity = $severities[$pkgXML.Package.Severity.type]
+
+            #alter Reboot Type 5 to 3 if RT5toRT3 is specified
+            if (($RT5toRT3) -and ($pkgXML.Package.Reboot.type -eq '5'))
+            {
+              $pkgXML.Package.Reboot.type = '3'
+            }
+
+            $pkgXML.Save($__localRepositoryPath)
+
+            #Load package descriptor XML and download each of the files referenced under the <Files> tag. Skip Installer if -ScanOnly specified.
+            #Note that the files will be located at the same relative path as the package descriptor XML on https://download.lenovo.com/...
+            $fileNameElements = @()
+            $installerFile = @()
+            $readmeFile = @()
+            $externalFiles = @()
+            Write-LogInformation("Get files for downloading...")
+            $installerFile = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("Installer").GetElementsByTagName("File")
+            try
+            {
+              $readmeFile = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("Readme").GetElementsByTagName("File")
+            }
+            catch
+            {
+              Write-LogInformation("No readme file specified.")
+            }
+            try
+            {
+              $externalFiles = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("External").GetElementsByTagName("File")
+            }
+            catch
+            {
+              Write-LogInformation("No external detection files specified.")
+            }
+                
+            if ($readmeFile) { $fileNameElements += $readmeFile }
+            if ($externalFiles) { $fileNameElements += $externalFiles }
+                
+            if (-Not ($ScanOnly))
+            {
+              $fileNameElements += $installerFile
+            }
+            #$fileNameElements = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("File")
+            foreach ($element in $fileNameElements)
+            {
+              $filename = $element.GetElementsByTagName("Name").InnerText
+              $expectedFileSize = $element.GetElementsByTagName("Size").InnerText
+              $expectedFileCRC = $element.GetElementsByTagName("CRC").InnerText
+
+              $fileUrl = $__url + "/" + $filename
+              $fileDestinationPath = [IO.Path]::Combine($RepositoryPath, $__packageID, $filename)
+              $fileDownloadResult = Get-File -Url $fileUrl `
+                -DestinationPath $fileDestinationPath `
+                -ExpectedFileSize $expectedFileSize `
+                -ExpectedFileCRC $expectedFileCRC
+                
+              #Delete the package folder if one of the files did not download or the size or CRC is invalid
+              if ($fileDownloadResult -eq $false)
+              {
+                Write-LogWarning("Failed to download the file $__url/$filename. Package $__packageID will be deleted")
+                $packageFolder = [IO.Path]::Combine($RepositoryPath, $__packageID)
+                Remove-Item $packageFolder -Recurse
 
                 break
+              }
+              else
+              {
+                Write-LogInformation("Downloaded $filename")
+              }
             }
-            #Filter by Package Type and Reboot Type
-            if (($global:rt -contains $pkgXML.Package.Reboot.type) -and ($global:pt -contains $pkgXML.Package.PackageType.type)) {
-                #Save package xml
-                #Create a subfolder using package ID as the folder name
-                $packagePath = Join-Path -Path $RepositoryPath -ChildPath $packageId
-                New-Item -ItemType "directory" -Force $packagePath | Out-Null
 
-                $packageFolderExists = Test-Path -Path $packagePath
-                if ($packageFolderExists -eq $False) {
-                    Write-LogError("Failed to create folder at the following path $RepositoryPath\$packageId"); Exit 1
-                }
-                Write-LogInformation("Getting $packageID...")
-                #Gather data needed for dbxml
-                $__packageID = $pkgXML.Package.id
-                $__name = $pkgXML.Package.name
-                $__description = $pkgXML.Package.Title.Desc.InnerText
-                $__filename = $url.SubString($url.LastIndexOf('/') + 1)
-                $__version = $pkgXML.Package.version
-                $__releasedate = $pkgXML.Package.ReleaseDate
-                $__size = $pkgXML.Package.Files.Installer.File.Size
-                $__url = $url.SubString(0, $url.LastIndexOf('/') + 1)
-                $__localRepositoryPath = [IO.Path]::Combine($RepositoryPath, $__packageID, $__filename)
-                $__localpath = [IO.Path]::Combine("\", $__packageID, $__filename)
-                $__severity = $severities[$pkgXML.Package.Severity.type]
+            #Build xml elements for dbxml
+            $_package = $dbxml.CreateElement("Package")
+            $_package.SetAttribute("id", $__packageID) | Out-Null
+            $_package.SetAttribute("name", $__name) | Out-Null
+            $_package.SetAttribute("description", $__description) | Out-Null
 
-                #alter Reboot Type 5 to 3 if RT5toRT3 is specified
-                if (($RT5toRT3) -and ($pkgXML.Package.Reboot.type -eq '5')) {
-                  $pkgXML.Package.Reboot.type = '3'
-                }
+            $sub1 = $dbxml.CreateElement("FileName")
+            $sub1text = $dbxml.CreateTextNode($__filename)
+            $sub1.AppendChild($sub1text) | Out-Null
 
-                $pkgXML.Save($__localRepositoryPath)
+            $sub2 = $dbxml.CreateElement("Version")
+            $sub2text = $dbxml.CreateTextNode($__version)
+            $sub2.AppendChild($sub2text) | Out-Null
 
-                #Load package descriptor XML and download each of the files referenced under the <Files> tag. Skip Installer if -ScanOnly specified.
-                #Note that the files will be located at the same relative path as the package descriptor XML on https://download.lenovo.com/...
-                $fileNameElements = @()
-                $installerFile = @()
-                $readmeFile = @()
-                $externalFiles = @()
-                Write-LogInformation("Get files for downloading...")
-                $installerFile = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("Installer").GetElementsByTagName("File")
-                try {
-                  $readmeFile = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("Readme").GetElementsByTagName("File")
-                } catch {
-                  Write-LogInformation("No readme file specified.")
-                }
-                try {
-                  $externalFiles = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("External").GetElementsByTagName("File")
-                } catch {
-                  Write-LogInformation("No external detection files specified.")
-                }
-                
-                if ($readmeFile) { $fileNameElements += $readmeFile }
-                if ($externalFiles) { $fileNameElements += $externalFiles }
-                
-                if (-Not ($ScanOnly)) {
-                  $fileNameElements += $installerFile
-                }
-                #$fileNameElements = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("File")
-                foreach ($element in $fileNameElements) {
-                    $filename = $element.GetElementsByTagName("Name").InnerText
-                    $expectedFileSize = $element.GetElementsByTagName("Size").InnerText
-                    $expectedFileCRC = $element.GetElementsByTagName("CRC").InnerText
+            $sub3 = $dbxml.CreateElement("ReleaseDate")
+            $sub3text = $dbxml.CreateTextNode($__releasedate)
+            $sub3.AppendChild($sub3text) | Out-Null
 
-                    $fileUrl = $__url + "/" + $filename
-                    $fileDestinationPath = [IO.Path]::Combine($RepositoryPath, $__packageID, $filename)
-                    $fileDownloadResult = Get-File -Url $fileUrl `
-                    -DestinationPath $fileDestinationPath `
-                    -ExpectedFileSize $expectedFileSize `
-                    -ExpectedFileCRC $expectedFileCRC
-                
-                    #Delete the package folder if one of the files did not download or the size or CRC is invalid
-                    if ($fileDownloadResult -eq $false) {
-                        Write-LogWarning("Failed to download the file $__url/$filename. Package $__packageID will be deleted")
-                        $packageFolder = [IO.Path]::Combine($RepositoryPath, $__packageID)
-                        Remove-Item $packageFolder -Recurse
+            $sub4 = $dbxml.CreateElement("Size")
+            $sub4text = $dbxml.CreateTextNode($__size)
+            $sub4.AppendChild($sub4text) | Out-Null
 
-                        break
-                    } else {
-                        Write-LogInformation("Downloaded $filename")
-                    }
-                }
+            $sub5 = $dbxml.CreateElement("URL")
+            $sub5text = $dbxml.CreateTextNode($__url)
+            $sub5.AppendChild($sub5text) | Out-Null
 
-                #Build xml elements for dbxml
-                $_package = $dbxml.CreateElement("Package")
-                $_package.SetAttribute("id", $__packageID) | Out-Null
-                $_package.SetAttribute("name", $__name) | Out-Null
-                $_package.SetAttribute("description", $__description) | Out-Null
+            $sub6 = $dbxml.CreateElement("Mode")
+            $sub6text = $dbxml.CreateTextNode("")
+            $sub6.AppendChild($sub6text) | Out-Null
 
-                $sub1 = $dbxml.CreateElement("FileName")
-                $sub1text = $dbxml.CreateTextNode($__filename)
-                $sub1.AppendChild($sub1text) | Out-Null
+            $sub7 = $dbxml.CreateElement("Type")
+            $sub7text = $dbxml.CreateTextNode("Quest")
+            $sub7.AppendChild($sub7text) | Out-Null
 
-                $sub2 = $dbxml.CreateElement("Version")
-                $sub2text = $dbxml.CreateTextNode($__version)
-                $sub2.AppendChild($sub2text) | Out-Null
+            $sub8 = $dbxml.CreateElement("Status")
+            $sub8text = $dbxml.CreateTextNode("Active")
+            $sub8.AppendChild($sub8text) | Out-Null
 
-                $sub3 = $dbxml.CreateElement("ReleaseDate")
-                $sub3text = $dbxml.CreateTextNode($__releasedate)
-                $sub3.AppendChild($sub3text) | Out-Null
+            $sub9 = $dbxml.CreateElement("PreviousStatus")
+            $sub9text = $dbxml.CreateTextNode("None")
+            $sub9.AppendChild($sub9text) | Out-Null
 
-                $sub4 = $dbxml.CreateElement("Size")
-                $sub4text = $dbxml.CreateTextNode($__size)
-                $sub4.AppendChild($sub4text) | Out-Null
+            $sub10 = $dbxml.CreateElement("LocalPath")
+            $sub10text = $dbxml.CreateTextNode($__localpath)
+            $sub10.AppendChild($sub10text) | Out-Null
 
-                $sub5 = $dbxml.CreateElement("URL")
-                $sub5text = $dbxml.CreateTextNode($__url)
-                $sub5.AppendChild($sub5text) | Out-Null
+            $sub11 = $dbxml.CreateElement("Severity")
+            $sub11text = $dbxml.CreateTextNode($__severity)
+            $sub11.AppendChild($sub11text) | Out-Null
 
-                $sub6 = $dbxml.CreateElement("Mode")
-                $sub6text = $dbxml.CreateTextNode("")
-                $sub6.AppendChild($sub6text) | Out-Null
+            $sub12 = $dbxml.CreateElement("DisplayLicense")
+            $sub12text = $dbxml.CreateTextNode("NotDisplay")
+            $sub12.AppendChild($sub12text) | Out-Null
 
-                $sub7 = $dbxml.CreateElement("Type")
-                $sub7text = $dbxml.CreateTextNode("Quest")
-                $sub7.AppendChild($sub7text) | Out-Null
+            $sub13 = $dbxml.CreateElement("SystemCompatibility")
+            $sub13sub = $dbxml.CreateElement("System")
+            $sub13sub.SetAttribute("mtm", $mt)
+            $sub13sub.SetAttribute("os", $global:OSName)
+            $sub13.AppendChild($sub13sub) | Out-Null
 
-                $sub8 = $dbxml.CreateElement("Status")
-                $sub8text = $dbxml.CreateTextNode("Active")
-                $sub8.AppendChild($sub8text) | Out-Null
+            #Set details for the update and populate database.xml
+            $_package.AppendChild($sub1) | Out-Null
+            $_package.AppendChild($sub2) | Out-Null
+            $_package.AppendChild($sub3) | Out-Null
+            $_package.AppendChild($sub4) | Out-Null
+            $_package.AppendChild($sub5) | Out-Null
+            $_package.AppendChild($sub6) | Out-Null
+            $_package.AppendChild($sub7) | Out-Null
+            $_package.AppendChild($sub8) | Out-Null
+            $_package.AppendChild($sub9) | Out-Null
+            $_package.AppendChild($sub10) | Out-Null
+            $_package.AppendChild($sub11) | Out-Null
+            $_package.AppendChild($sub12) | Out-Null
+            $_package.AppendChild($sub13) | Out-Null
 
-                $sub9 = $dbxml.CreateElement("PreviousStatus")
-                $sub9text = $dbxml.CreateTextNode("None")
-                $sub9.AppendChild($sub9text) | Out-Null
-
-                $sub10 = $dbxml.CreateElement("LocalPath")
-                $sub10text = $dbxml.CreateTextNode($__localpath)
-                $sub10.AppendChild($sub10text) | Out-Null
-
-                $sub11 = $dbxml.CreateElement("Severity")
-                $sub11text = $dbxml.CreateTextNode($__severity)
-                $sub11.AppendChild($sub11text) | Out-Null
-
-                $sub12 = $dbxml.CreateElement("DisplayLicense")
-                $sub12text = $dbxml.CreateTextNode("NotDisplay")
-                $sub12.AppendChild($sub12text) | Out-Null
-
-                $sub13 = $dbxml.CreateElement("SystemCompatibility")
-                $sub13sub = $dbxml.CreateElement("System")
-                $sub13sub.SetAttribute("mtm", $mt)
-                $sub13sub.SetAttribute("os", $global:OSName)
-                $sub13.AppendChild($sub13sub) | Out-Null
-
-                #Set details for the update and populate database.xml
-                $_package.AppendChild($sub1) | Out-Null
-                $_package.AppendChild($sub2) | Out-Null
-                $_package.AppendChild($sub3) | Out-Null
-                $_package.AppendChild($sub4) | Out-Null
-                $_package.AppendChild($sub5) | Out-Null
-                $_package.AppendChild($sub6) | Out-Null
-                $_package.AppendChild($sub7) | Out-Null
-                $_package.AppendChild($sub8) | Out-Null
-                $_package.AppendChild($sub9) | Out-Null
-                $_package.AppendChild($sub10) | Out-Null
-                $_package.AppendChild($sub11) | Out-Null
-                $_package.AppendChild($sub12) | Out-Null
-                $_package.AppendChild($sub13) | Out-Null
-
-                $dbxml.LastChild.AppendChild($_package) | Out-Null
-            }
+            $dbxml.LastChild.AppendChild($_package) | Out-Null
           }
+        }
       }
-      } else {
-        Write-LogWarning "Skipping $mt as it is not a valid machine type."
-      }
+    }
+    else
+    {
+      Write-LogWarning "Skipping $mt as it is not a valid machine type."
+    }
   
-}
+  }
   
-#3. Write dbxml file
-$databaseXmlPath = Join-Path -Path $RepositoryPath -ChildPath "database.xml"
-$dbxml.Save($databaseXmlPath)
+  #3. Write dbxml file
+  $databaseXmlPath = Join-Path -Path $RepositoryPath -ChildPath "database.xml"
+  $dbxml.Save($databaseXmlPath)
     
-Write-LogInformation "Script execution finished."
+  Write-LogInformation "Script execution finished."
 
 }
-catch {
+catch
+{
   Write-LogError "Unexpected error occurred:`n $_"; Exit 1
 }
