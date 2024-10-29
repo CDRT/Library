@@ -28,7 +28,7 @@
             "id": "4b8a25f7-5274-4d63-8077-58dbb60fe21a",
             "cellValue": "Tab",
             "linkTarget": "parameter",
-            "linkLabel": "Bios",
+            "linkLabel": "BIOS",
             "subTarget": "Bios",
             "style": "link"
           },
@@ -158,6 +158,7 @@
                     "timeContext": {
                       "durationMs": 2592000000
                     },
+                    "showExportToExcel": true,
                     "queryType": 0,
                     "resourceType": "microsoft.operationalinsights/workspaces",
                     "gridSettings": {
@@ -174,9 +175,20 @@
                           }
                         }
                       ],
-                      "filter": true
+                      "filter": true,
+                      "sortBy": [
+                        {
+                          "itemKey": "DriverName",
+                          "sortOrder": 1
+                        }
+                      ]
                     },
-                    "sortBy": []
+                    "sortBy": [
+                      {
+                        "itemKey": "DriverName",
+                        "sortOrder": 1
+                      }
+                    ]
                   },
                   "name": "InstallSuccess"
                 }
@@ -202,6 +214,7 @@
                     "timeContext": {
                       "durationMs": 2592000000
                     },
+                    "showExportToExcel": true,
                     "queryType": 0,
                     "resourceType": "microsoft.operationalinsights/workspaces",
                     "gridSettings": {
@@ -238,6 +251,7 @@
                     "timeContext": {
                       "durationMs": 2592000000
                     },
+                    "showExportToExcel": true,
                     "queryType": 0,
                     "resourceType": "microsoft.operationalinsights/workspaces",
                     "gridSettings": {
@@ -257,6 +271,7 @@
               "groupType": "editable",
               "title": "Updates Failed to Install (Last 30 Days)",
               "expandable": true,
+              "expanded": true,
               "items": [
                 {
                   "type": 3,
@@ -267,6 +282,7 @@
                     "timeContext": {
                       "durationMs": 2592000000
                     },
+                    "showExportToExcel": true,
                     "queryType": 0,
                     "resourceType": "microsoft.operationalinsights/workspaces",
                     "gridSettings": {
@@ -286,6 +302,7 @@
               "groupType": "editable",
               "title": "Updates Failed to Download (Last 30 Days)",
               "expandable": true,
+              "expanded": true,
               "loadType": "always",
               "items": [
                 {
@@ -297,6 +314,7 @@
                     "timeContext": {
                       "durationMs": 2592000000
                     },
+                    "showExportToExcel": true,
                     "queryType": 0,
                     "resourceType": "microsoft.operationalinsights/workspaces",
                     "gridSettings": {
@@ -593,6 +611,7 @@
                     "timeContext": {
                       "durationMs": 2592000000
                     },
+                    "showExportToExcel": true,
                     "queryType": 0,
                     "resourceType": "microsoft.operationalinsights/workspaces",
                     "gridSettings": {
@@ -638,168 +657,250 @@
       "name": "Warranty"
     },
     {
-      "type": 3,
-      "content": {
-        "version": "KqlItem/1.0",
-        "query": "Lenovo_Device_Properties_CL\r\n| summarize arg_max(TimeGenerated, *) by Hostname_s\r\n| where AvailableBiosVersion_s contains 'Current'\r\n| summarize Lenovo_Device_Properties_CL = count() by Product_s",
-        "size": 4,
-        "title": "Current Level - Count by Model",
-        "timeContext": {
-          "durationMs": 2592000000
-        },
-        "queryType": 0,
-        "resourceType": "microsoft.operationalinsights/workspaces",
-        "visualization": "tiles",
-        "tileSettings": {
-          "titleContent": {
-            "columnMatch": "Product_s",
-            "formatter": 1
-          },
-          "leftContent": {
-            "columnMatch": "Lenovo_Device_Properties_CL",
-            "formatter": 12,
-            "formatOptions": {
-              "palette": "auto"
-            },
-            "numberFormat": {
-              "unit": 17,
-              "options": {
-                "maximumSignificantDigits": 3,
-                "maximumFractionDigits": 2
-              }
-            }
-          },
-          "showBorder": true
-        },
-        "graphSettings": {
-          "type": 0,
-          "topContent": {
-            "columnMatch": "Product_s",
-            "formatter": 1
-          },
-          "centerContent": {
-            "columnMatch": "Lenovo_Device_Properties_CL",
-            "formatter": 1,
-            "numberFormat": {
-              "unit": 17,
-              "options": {
-                "maximumSignificantDigits": 3,
-                "maximumFractionDigits": 2
-              }
-            }
-          }
-        }
-      },
-      "conditionalVisibility": {
-        "parameterName": "Tab",
-        "comparison": "isEqualTo",
-        "value": "Bios"
-      },
-      "name": "CurrentBios"
-    },
-    {
-      "type": 3,
-      "content": {
-        "version": "KqlItem/1.0",
-        "query": "Lenovo_Device_Properties_CL\r\n| summarize arg_max(TimeGenerated, *) by Hostname_s\r\n| where AvailableBiosVersion_s !contains 'Current'\r\n| summarize Lenovo_Device_Properties_CL = count() by Product_s",
-        "size": 4,
-        "title": "BIOS Out of Date - Count by Model",
-        "noDataMessageStyle": 4,
-        "timeContext": {
-          "durationMs": 2592000000
-        },
-        "queryType": 0,
-        "resourceType": "microsoft.operationalinsights/workspaces",
-        "visualization": "tiles",
-        "gridSettings": {
-          "sortBy": [
-            {
-              "itemKey": "Product_s",
-              "sortOrder": 1
-            }
-          ]
-        },
-        "sortBy": [
-          {
-            "itemKey": "Product_s",
-            "sortOrder": 1
-          }
-        ],
-        "tileSettings": {
-          "titleContent": {
-            "columnMatch": "Product_s",
-            "formatter": 1
-          },
-          "leftContent": {
-            "columnMatch": "Lenovo_Device_Properties_CL",
-            "formatter": 12,
-            "formatOptions": {
-              "palette": "auto"
-            },
-            "numberFormat": {
-              "unit": 17,
-              "options": {
-                "maximumSignificantDigits": 3,
-                "maximumFractionDigits": 2
-              }
-            }
-          },
-          "showBorder": true
-        },
-        "chartSettings": {
-          "seriesLabelSettings": [
-            {
-              "seriesName": "Other",
-              "label": "Current"
-            }
-          ]
-        }
-      },
-      "conditionalVisibility": {
-        "parameterName": "Tab",
-        "comparison": "isEqualTo",
-        "value": "Bios"
-      },
-      "name": "OutdatedBios"
-    },
-    {
       "type": 12,
       "content": {
         "version": "NotebookGroup/1.0",
         "groupType": "editable",
         "title": "BIOS and CVE Information",
-        "expandable": true,
-        "expanded": true,
         "items": [
           {
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "Lenovo_Device_Properties_CL\r\n| summarize arg_max(TimeGenerated, *) by Hostname_s\r\n| distinct\r\n    InstalledBiosVersion_s\r\n    ,\r\n    Hostname_s\r\n    ,\r\n    Product_s\r\n    ,\r\n    MTM_s\r\n    ,\r\n    CVE_s\r\n    ,\r\n    AvailableBiosVersion_s\r\n| project\r\n    ComputerName=Hostname_s\r\n    ,\r\n    Product=Product_s\r\n    ,\r\n    MachineType=MTM_s\r\n    ,\r\n    InstalledBiosVersion=InstalledBiosVersion_s\r\n    ,\r\n    CVEs=CVE_s\r\n    ,\r\n    AvailableBIOS=AvailableBiosVersion_s",
-              "size": 0,
-              "title": "Last 30 Days",
+              "query": "Lenovo_Device_Properties_CL\r\n| summarize arg_max(TimeGenerated, *) by Hostname_s\r\n| extend Installed_BIOS_Version = extract(@\"(\\d+\\.\\d+)\", 1, InstalledBiosVersion_s)\r\n| extend Available_BIOS_Versions = extract_all(@\"(\\d+\\.\\d+)\", tostring(AvailableBiosVersion_s))\r\n| extend IsUpToDate = iff(array_index_of(Available_BIOS_Versions, Installed_BIOS_Version) != -1, \"Up to Date\", \"Out of Date\")\r\n| extend IsBiosCurrent = iff(AvailableBiosVersion_s contains \"BIOS is Current\", \"Up to Date\", IsUpToDate)\r\n| summarize Count = count() by IsBiosCurrent\r\n| project Status = IsBiosCurrent, Count\r\n| render piechart \r\n",
+              "size": 3,
+              "title": "BIOS Update Status",
+              "timeContext": {
+                "durationMs": 259200000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "query - 9"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "Lenovo_Device_Properties_CL\r\n| summarize arg_max(TimeGenerated, *) by Hostname_s\r\n| where AvailableBiosVersion_s contains 'Current'\r\n| summarize Lenovo_Device_Properties_CL = count() by Product_s",
+              "size": 1,
+              "title": "Current Level - Count by Model",
               "timeContext": {
                 "durationMs": 2592000000
               },
               "queryType": 0,
               "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Product_s",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "Lenovo_Device_Properties_CL",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "maximumSignificantDigits": 3,
+                      "maximumFractionDigits": 2
+                    }
+                  }
+                },
+                "showBorder": true,
+                "sortCriteriaField": "Lenovo_Device_Properties_CL",
+                "sortOrderField": 2,
+                "size": "auto"
+              },
+              "graphSettings": {
+                "type": 0,
+                "topContent": {
+                  "columnMatch": "Product_s",
+                  "formatter": 1
+                },
+                "centerContent": {
+                  "columnMatch": "Lenovo_Device_Properties_CL",
+                  "formatter": 1,
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "maximumSignificantDigits": 3,
+                      "maximumFractionDigits": 2
+                    }
+                  }
+                }
+              }
+            },
+            "conditionalVisibility": {
+              "parameterName": "Tab",
+              "comparison": "isEqualTo",
+              "value": "Bios"
+            },
+            "name": "CurrentBios"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "//Lenovo_Device_Properties_CL\r\n//| summarize arg_max(TimeGenerated, *) by Hostname_s\r\n//| where AvailableBiosVersion_s !contains 'Current'\r\n//| summarize Lenovo_Device_Properties_CL = count() by Product_s\r\nLenovo_Device_Properties_CL\r\n| summarize arg_max(TimeGenerated, *) by Hostname_s\r\n| extend Installed_BIOS_Version = extract(@\"(\\d+\\.\\d+)\", 1, InstalledBiosVersion_s)\r\n| extend Available_BIOS_Versions = extract_all(@\"(\\d+\\.\\d+)\", tostring(AvailableBiosVersion_s))\r\n| extend IsUpToDate = iff(array_index_of(Available_BIOS_Versions, Installed_BIOS_Version) != -1, \"Up to Date\", \"Out of Date\")\r\n| extend IsBiosCurrent = iff(AvailableBiosVersion_s contains \"BIOS is Current\", \"Up to Date\", IsUpToDate)\r\n| where IsBiosCurrent == \"Out of Date\"\r\n//\r\n| summarize OutOfDateDevices = count() by Product_s\r\n| project Product = Product_s, OutOfDateDevices\r\n//",
+              "size": 1,
+              "title": "BIOS Out of Date - Count by Model",
+              "noDataMessageStyle": 4,
+              "timeContext": {
+                "durationMs": 2592000000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "tiles",
               "gridSettings": {
-                "filter": true,
                 "sortBy": [
                   {
-                    "itemKey": "Product",
+                    "itemKey": "Product_s",
                     "sortOrder": 1
                   }
                 ]
               },
               "sortBy": [
                 {
-                  "itemKey": "Product",
+                  "itemKey": "Product_s",
                   "sortOrder": 1
+                }
+              ],
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Product",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "OutOfDateDevices",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "style": "decimal",
+                      "maximumFractionDigits": 2,
+                      "maximumSignificantDigits": 3
+                    }
+                  }
+                },
+                "showBorder": true,
+                "sortCriteriaField": "OutOfDateDevices",
+                "sortOrderField": 2,
+                "size": "auto"
+              },
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Other",
+                    "label": "Current"
+                  }
+                ]
+              }
+            },
+            "conditionalVisibility": {
+              "parameterName": "Tab",
+              "comparison": "isEqualTo",
+              "value": "Bios"
+            },
+            "name": "OutdatedBios"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "title": "BIOS and CVE Information",
+              "expandable": true,
+              "items": [
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "Lenovo_Device_Properties_CL\r\n| summarize arg_max(TimeGenerated, *) by Hostname_s\r\n| distinct\r\n    InstalledBiosVersion_s\r\n    ,\r\n    Hostname_s\r\n    ,\r\n    Product_s\r\n    ,\r\n    MTM_s\r\n    ,\r\n    CVE_s\r\n    ,\r\n    AvailableBiosVersion_s\r\n| project\r\n    ComputerName=Hostname_s\r\n    ,\r\n    Product=Product_s\r\n    ,\r\n    MachineType=MTM_s\r\n    ,\r\n    InstalledBiosVersion=InstalledBiosVersion_s\r\n    ,\r\n    CVEs=CVE_s\r\n    ,\r\n    AvailableBIOS=AvailableBiosVersion_s",
+                    "size": 0,
+                    "title": "Last 30 Days",
+                    "timeContext": {
+                      "durationMs": 2592000000
+                    },
+                    "showExportToExcel": true,
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "filter": true,
+                      "sortBy": [
+                        {
+                          "itemKey": "Product",
+                          "sortOrder": 1
+                        }
+                      ]
+                    },
+                    "sortBy": [
+                      {
+                        "itemKey": "Product",
+                        "sortOrder": 1
+                      }
+                    ]
+                  },
+                  "name": "BiosVersion"
                 }
               ]
             },
-            "name": "BiosVersion"
+            "name": "BIOS and CVE Information"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "title": "BIOS Out of Date",
+              "expandable": true,
+              "expanded": true,
+              "items": [
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "Lenovo_Device_Properties_CL\r\n| summarize arg_max(TimeGenerated, *) by Hostname_s\r\n// Extract the installed BIOS version from InstalledBiosVersion_s\r\n| extend Installed_BIOS_Version = extract(@\"(\\d+\\.\\d+)\", 1, InstalledBiosVersion_s)\r\n// Ensure that AvailableBiosVersion_s is treated as an array of strings\r\n| extend Available_BIOS_Versions = extract_all(@\"(\\d+\\.\\d+)\", tostring(AvailableBiosVersion_s))\r\n// Check if any value in the Available_BIOS_Versions array matches Installed_BIOS_Version\r\n| extend IsUpToDate = iff(array_index_of(Available_BIOS_Versions, Installed_BIOS_Version) != -1, \"Up to Date\", \"Out of Date\")\r\n// Also handle cases where \"BIOS is Current\" marks the host as up to date\r\n| extend IsBiosCurrent = iff(AvailableBiosVersion_s contains \"BIOS is Current\", \"Up to Date\", IsUpToDate)\r\n// Only show devices that are out of date\r\n| where IsBiosCurrent == \"Out of Date\"\r\n| project\r\n    ComputerName = Hostname_s,\r\n    Product = Product_s,\r\n    MachineType = MTM_s,\r\n    InstalledBiosVersion = InstalledBiosVersion_s,\r\n    CVEs = CVE_s,\r\n    AvailableBIOS = AvailableBiosVersion_s\r\n",
+                    "size": 0,
+                    "title": "Last 30 Days",
+                    "timeContext": {
+                      "durationMs": 2592000000
+                    },
+                    "showExportToExcel": true,
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "filter": true,
+                      "sortBy": [
+                        {
+                          "itemKey": "Product",
+                          "sortOrder": 1
+                        }
+                      ]
+                    },
+                    "sortBy": [
+                      {
+                        "itemKey": "Product",
+                        "sortOrder": 1
+                      }
+                    ]
+                  },
+                  "name": "BiosVersion"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "Tab",
+              "comparison": "isEqualTo",
+              "value": "Bios"
+            },
+            "name": "BIOS - Out of Date"
           }
         ]
       },
@@ -812,7 +913,7 @@
     }
   ],
   "fallbackResourceIds": [
-    "/subscriptions/3f85a6e8-0a55-469f-9d48-9a547c8af6ff/resourceGroups/rg-log-eastus-001/providers/Microsoft.OperationalInsights/workspaces/log-lenovodevicehealth"
+    "/subscriptions/701e216a-1d47-4d70-818d-2bba01f8dc65/resourceGroups/Lenovo/providers/Microsoft.OperationalInsights/workspaces/Lenovo-BIOS-Info"
   ],
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
 }
