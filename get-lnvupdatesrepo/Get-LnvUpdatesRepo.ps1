@@ -1,18 +1,17 @@
-#Version 1.0 - Initial
 <#
-DISCLAIMER:
-These sample scripts are not supported under any Lenovo standard support  
-program or service. The sample scripts are provided AS IS without warranty  
-of any kind. Lenovo further disclaims all implied warranties including,  
-without limitation, any implied warranties of merchantability or of fitness for  
-a particular purpose. The entire risk arising out of the use or performance of  
-the sample scripts and documentation remains with you. In no event shall  
-Lenovo, its authors, or anyone else involved in the creation, production, or  
-delivery of the scripts be liable for any damages whatsoever (including,  
-without limitation, damages for loss of business profits, business interruption,  
-loss of business information, or other pecuniary loss) arising out of the use  
-of or inability to use the sample scripts or documentation, even if Lenovo  
-has been advised of the possibility of such damages. 
+  DISCLAIMER:
+  These sample scripts are not supported under any Lenovo standard support  
+  program or service. The sample scripts are provided AS IS without warranty  
+  of any kind. Lenovo further disclaims all implied warranties including,  
+  without limitation, any implied warranties of merchantability or of fitness for  
+  a particular purpose. The entire risk arising out of the use or performance of  
+  the sample scripts and documentation remains with you. In no event shall  
+  Lenovo, its authors, or anyone else involved in the creation, production, or  
+  delivery of the scripts be liable for any damages whatsoever (including,  
+  without limitation, damages for loss of business profits, business interruption,  
+  loss of business information, or other pecuniary loss) arising out of the use  
+  of or inability to use the sample scripts or documentation, even if Lenovo  
+  has been advised of the possibility of such damages. 
 #>
 
 <#
@@ -88,13 +87,6 @@ has been advised of the possibility of such damages.
   NOTE: This parameter can only be used when Thin Installer will be processing
   the updates in the repository.
 
-  .PARAMETER ScanOnly
-  Mandatory: False
-  Data type: Switch
-  Specify this parameter to create a repository that only contains the package
-  descriptor XML and external detection routine files to be used with Thin 
-  Installer's SCAN action.
-
   .EXAMPLE
   Get-LnvUpdatesRepo.ps1 -RepositoryPath 'C:\Program Files (x86)\Lenovo\ThinInstaller\Repository' -PackageTypes '1,2' -RebootTypes '0,3'
   
@@ -107,32 +99,37 @@ has been advised of the possibility of such damages.
   .OUTPUTS
   System.Int32. 0 - success
   System.Int32. 1 - fail
+
+  .NOTES
+  #Version 1.0 - Initial: 2024-01-04
+  #Version 2.0 - 2024-11-19
+    - Incorporate SCCM TS Module
+    - Removed ScanOnly parameter
+    - Adjust logic for saving content to local repo.
+    - Additional formatting
 #>
 
 Param(
-  [Parameter(Mandatory = $False)]
+  [Parameter(Mandatory = $false)]
   [string]$MachineTypes,
 
-  [Parameter(Mandatory = $False)]
+  [Parameter(Mandatory = $false)]
   [string]$OS,
 
-  [Parameter(Mandatory = $False)]
+  [Parameter(Mandatory = $false)]
   [string]$PackageTypes,
 
-  [Parameter(Mandatory = $False)]
+  [Parameter(Mandatory = $false)]
   [string]$RebootTypes,
 
-  [Parameter(Mandatory = $True)]
+  [Parameter(Mandatory = $true)]
   [string]$RepositoryPath,
   
-  [Parameter(Mandatory = $False)]
+  [Parameter(Mandatory = $false)]
   [string]$LogPath,
 
-  [Parameter(Mandatory = $False)]
-  [switch]$RT5toRT3,
-
-  [Parameter(Mandatory = $False)]
-  [switch]$ScanOnly
+  [Parameter(Mandatory = $false)]
+  [switch]$RT5toRT3
 )
 
 #region Parameters validation
@@ -140,13 +137,13 @@ function Confirm-ParameterPattern
 {
   [CmdletBinding()]
   param(
-    [Parameter(Mandatory = $True)]
+    [Parameter(Mandatory = $true)]
     [string]$RegEx,
-    [Parameter(Mandatory = $False)]
+    [Parameter(Mandatory = $false)]
     [string]$Value,
-    [Parameter(Mandatory = $True)]
+    [Parameter(Mandatory = $true)]
     [bool]$Mandatory,
-    [Parameter(Mandatory = $False)]
+    [Parameter(Mandatory = $false)]
     [string]$ErrorMessage
   )
 
@@ -154,9 +151,9 @@ function Confirm-ParameterPattern
   {
     $result = $Value -match $RegEx
 
-    if ($result -ne $True)
+    if ($result -ne $true)
     {
-      Write-Output($ErrorMessage); Exit 1
+      Write-Output $ErrorMessage; Exit 1
     }
   }
 }
@@ -166,7 +163,7 @@ function Confirm-ParameterPattern
 function Write-LogError
 {
   Param(
-    [Parameter(Mandatory = $True)]
+    [Parameter(Mandatory = $true)]
     [string]$Message
   )
   $logline = "[LNV_ERROR_$((Get-Date).ToString("yyyy-MM-ddTHH:mm:ss"))]: $Message" 
@@ -177,7 +174,7 @@ function Write-LogError
 function Write-LogWarning
 {
   Param(
-    [Parameter(Mandatory = $True)]
+    [Parameter(Mandatory = $true)]
     [string]$Message
   )
   $logline = "[LNV_WARNING_$((Get-Date).ToString("yyyy-MM-ddTHH:mm:ss"))]: $Message"
@@ -188,7 +185,7 @@ function Write-LogWarning
 function Write-LogInformation
 {
   Param(
-    [Parameter(Mandatory = $True)]
+    [Parameter(Mandatory = $true)]
     [string]$Message
   )
   $logline = "[LNV_INFORMATION_$((Get-Date).ToString("yyyy-MM-ddTHH:mm:ss"))]: $Message"
@@ -215,7 +212,7 @@ function Get-XmlFile
   {
     try
     {
-      [System.XML.XMLDocument]$xmlFile = (New-Object System.Net.WebClient).DownloadString($Url)
+      [System.XML.XMLDocument]$xmlFile = (New-Object -TypeName System.Net.WebClient).DownloadString($Url)
       $stop = $true
     }
     catch
@@ -231,7 +228,7 @@ function Get-XmlFile
       }
     }
   }
-  While ($stop -eq $false)
+  while ($stop -eq $false)
 
   return $xmlFile
 }
@@ -257,7 +254,7 @@ function Get-File
   {
     try
     {
-        (New-Object System.Net.WebClient).DownloadFile($Url, $DestinationPath)
+      (New-Object -TypeName System.Net.WebClient).DownloadFile($Url, $DestinationPath)
 
       #Check file size and CRC and delete the folder if they are not equal
       $actualFileCRC = $(Get-FileHash -Path $DestinationPath -Algorithm SHA256).Hash
@@ -265,7 +262,7 @@ function Get-File
 
       #Return if the file is .txt
       $extension = [IO.Path]::GetExtension($DestinationPath)
-      if ($extension -eq ".txt" )
+      if ($extension -eq ".txt" -or $extension -eq ".html")
       {
         $stop = $true
         return $true
@@ -302,7 +299,7 @@ function Get-File
       }
     }
   }
-  While ($stop -eq $false)
+  while ($stop -eq $false)
 
   return $false
 }
@@ -310,12 +307,12 @@ function Get-File
 function Confirm-Parameters
 {
   Confirm-ParameterPattern -Value $RepositoryPath `
-    -Mandatory $True `
+    -Mandatory $true `
     -RegEx "^((?:~?\/)|(?:(?:\\\\\?\\)?[a-zA-Z]+\:))(?:\/?(.*))?$" `
     -ErrorMessage "RepositoryPath parameter must be a properly formatted and fully qualified path to an existing folder where the local repository resides."
   
   Confirm-ParameterPattern -Value $LogPath `
-    -Mandatory $False `
+    -Mandatory $false `
     -RegEx "^((?:~?\/)|(?:(?:\\\\\?\\)?[a-zA-Z]+\:))(?:\/?(.*))?$" `
     -ErrorMessage "LogPath parameter must be a properly formatted and fully qualified path to file"
   
@@ -342,6 +339,7 @@ function Confirm-Parameters
 #endregion
 
 #region globals
+#region Database XSD
 $dbxsd_text = @"
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
@@ -496,6 +494,7 @@ $dbxsd_text = @"
        </xs:element>
   </xs:schema>
 "@
+#endregion
 
 $global:MachineTypesArray = $null
 
@@ -520,101 +519,174 @@ else
   $global:pt = @('1', '2', '3', '4')
 }
 
-#get OS - if not specified or not one of 11 or 10, then default to 10
+<#
+  Get OS - if not specified or not one of 11 or 10, then default to 10
+#>
 if ($OS -eq '')
 {
   $OS = (Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_OperatingSystem).Version
   if ($OS -match '10.0.1')
   {
-    $global:OS = "Win10"
-    $global:OSName = "Windows 10"  
+    $global:OS = 'Win10'
+    $global:OSName = 'Windows 10'  
   }
   elseif ($OS -match '10.0.2')
   {
-    $global:OS = "Win11"
-    $global:OSName = "Windows 11"
+    $global:OS = 'Win11'
+    $global:OSName = 'Windows 11'
   }  
 }
 elseif ($OS -eq '10')
 {
-  $global:OS = "Win10"
-  $global:OSName = "Windows 10"
+  $global:OS = 'Win10'
+  $global:OSName = 'Windows 10'
 }
 elseif ($OS -eq '11')
 {
-  $global:OS = "Win11"
-  $global:OSName = "Windows 11"
+  $global:OS = 'Win11'
+  $global:OSName = 'Windows 11'
 }
 else
 {
-  $global:OS = "Win10"
-  $global:OSName = "Windows 10"
+  $global:OS = 'Win10'
+  $global:OSName = 'Windows 10'
 }
 
-if ($LogPath -eq "")
+if ($LogPath -eq '')
 {
   $LogPath = "$RepositoryPath\ti-auto-repo.log"
 }
 #endregion
 
+#region SCCM-TSEnvironment
+#Credit to https://github.com/sombrerosheep/TaskSequenceModule
+function Confirm-TSProgressUISetup()
+{
+  if ($null -eq $Script:TaskSequenceProgressUi)
+  {
+    try { $Script:TaskSequenceProgressUi = New-Object -ComObject Microsoft.SMS.TSProgressUI }
+    catch { throw "Unable to connect to the Task Sequence Progress UI! Please verify you are in a running Task Sequence Environment. Please note: TSProgressUI cannot be loaded during a prestart command.`n`nErrorDetails:`n$_" }
+  }
+}
+
+function Confirm-TSEnvironmentSetup()
+{
+  if ($null -eq $Script:TaskSequenceEnvironment)
+  {
+    try { $Script:TaskSequenceEnvironment = New-Object -ComObject Microsoft.SMS.TSEnvironment }
+    catch { throw "Unable to connect to the Task Sequence Environment! Please verify you are in a running Task Sequence Environment.`n`nErrorDetails:`n$_" }
+  }
+}
+
+function Show-TSActionProgress()
+{
+  param(
+    [Parameter(Mandatory = $true)]
+    [string] $Message,
+    [Parameter(Mandatory = $true)]
+    [long] $Step,
+    [Parameter(Mandatory = $true)]
+    [long] $MaxStep
+  )
+
+  Confirm-TSProgressUISetup
+  Confirm-TSEnvironmentSetup
+
+  $Script:TaskSequenceProgressUi.ShowActionProgress(`
+      $Script:TaskSequenceEnvironment.Value("_SMSTSOrgName"), `
+      $Script:TaskSequenceEnvironment.Value("_SMSTSPackageName"), `
+      $Script:TaskSequenceEnvironment.Value("_SMSTSCustomProgressDialogMessage"), `
+      $Script:TaskSequenceEnvironment.Value("_SMSTSCurrentActionName"), `
+      [Convert]::ToUInt32($Script:TaskSequenceEnvironment.Value("_SMSTSNextInstructionPointer")), `
+      [Convert]::ToUInt32($Script:TaskSequenceEnvironment.Value("_SMSTSInstructionTableSize")), `
+      $Message, `
+      $Step, `
+      $MaxStep)
+}
+#endregion
+
+Confirm-TSProgressUISetup
+Confirm-TSEnvironmentSetup
+
+$ErrorActionPreference = 'SilentlyContinue'
+
 try
 {
-  
   Confirm-Parameters
   
-  # What to do if repository folder already exists 
-  # Comment and uncomment lines in the if clause below to achieve desired behavior.
+  <#
+    If the repository folder already exists:
+      * Comment or uncomment lines within the 'if' clause below to achieve the desired behavior.
+  #>
+
   $repositoryFolderExists = Test-Path -Path $RepositoryPath
-  if ($repositoryFolderExists -eq $True)
+  if ($repositoryFolderExists -eq $true)
   {
     # repopulate each time with latest content
-    Remove-Item $RepositoryPath -Recurse
+    Remove-Item -Path $RepositoryPath -Recurse
 
-    # exit script and use existing repo
+    #exit script and use existing repo
     #Write-LogInformation "Exiting script as repo already exists."
     #Exit
   }
 
-  #1 Prepare repository location
-  New-Item -ItemType "directory" -Force $RepositoryPath | Out-Null
+  <#
+    1.
+      Prepare repository location
+  #>
+  New-Item -ItemType Directory -Force $RepositoryPath | Out-Null
 
   $repositoryFolderExists = Test-Path -Path $RepositoryPath
-  if ($repositoryFolderExists -eq $False)
+  if ($repositoryFolderExists -eq $false)
   {
-    Write-LogError("Failed to create folder at the following path $RepositoryPath"); Exit 1
+    Write-LogError "Failed to create folder at the following path $RepositoryPath"
+    return
   }
 
-  #1.1 Create database.xsd file
-  [System.XML.XMLDocument]$dbxsd = New-Object System.Xml.XmlDocument
+  <#
+    1.1
+      Create database.xsd file
+  #>
+  [System.XML.XMLDocument]$dbxsd = New-Object -TypeName System.Xml.XmlDocument
   $dbxsd.LoadXml($dbxsd_text)
   $databaseXsdPath = Join-Path -Path $RepositoryPath -ChildPath "database.xsd"
   $dbxsd.Save($databaseXsdPath)
 
-  #1.2 Create an XML document object to contain database.xml
-  #Array of severities to translate integer into string
+  <#
+    1.2 
+      Create an XML document object to contain database.xml
+      Array of severities to translate integer into string
+  #>
   $severities = @("None", "Critical", "Recommended", "Optional")
 
   #Initialize dbxml
-  [System.XML.XMLDocument]$dbxml = New-Object System.Xml.XmlDocument
+  [System.XML.XMLDocument]$dbxml = New-Object -TypeName System.Xml.XmlDocument
   $xmldecl = $dbxml.CreateXmlDeclaration("1.0", "UTF-8", $null)
   [System.XML.XMLElement]$dbxmlRoot = $dbxml.CreateElement("Database")
   $dbxml.InsertBefore($xmldecl, $dbxml.DocumentElement) | Out-Null
   $dbxml.AppendChild($dbxmlRoot) | Out-Null
   $dbxmlRoot.SetAttribute("version", "301") | Out-Null
 
-  #2. Download the updates catalog from https://download.lenovo.com/catalog/<mt>_<os>.xml
+  <#
+    2.
+      Download the updates catalog from https://download.lenovo.com/catalog/<mt>_<os>.xml
+  #>
   foreach ($mt in $global:MachineTypesArray)
   {
     if ($mt.Length -eq 4)
     {
       $catalogUrl = "https://download.lenovo.com/catalog/$mt`_$global:OS.xml"
       $catalog = Get-XmlFile -Url $catalogUrl
-      if (!$catalog)
+      if (-Not ($catalog))
       {
         Write-LogError "Failed to download the updates catalog from $catalogUrl. Check that $mt is a valid machine type."; Exit 1
+        Show-TSActionProgress -Message "Failed to download the updates catalog from $catalogUrl. Check that $mt is a valid machine type." -Step 1 -MaxStep 1
       }
 
-      #2.1. Get URLs for package descriptors that match PackageIds
+      <#
+        2.1.
+          Get URLs for package descriptors that match PackageIds
+      #>
       $packages = @{}
       $packagesUrls = $catalog.packages.package.location
 
@@ -628,11 +700,13 @@ try
       }
       
       $packagesCount = $packages.Count
-      Write-LogInformation "Found packages for the system: $packagesCount"
+      Write-LogInformation "Found $packagesCount for the system"
+      Show-TSActionProgress -Message "Found $packagesCount updates for the system" -Step 1 -MaxStep 1
 
       if ($packagesCount -eq 0)
       {
         Write-LogError "No updates found in the updates catalog"
+        Show-TSActionProgress -Message "No updates found in the updates catalog" -Step 1 -MaxStep 10
       }
 
       if ($packagesCount -ne 0)
@@ -646,22 +720,24 @@ try
 
           #Download package descriptor XML to this subfolder
           [xml] $pkgXML = Get-XmlFile -Url $url
-          if (!$pkgXml)
+          if (-Not ($pkgXml))
           {
             Write-LogError "Failed to download the package descriptor from $url"
-            Remove-Item $packagePath -Recurse
-
-            break
+            Show-TSActionProgress -Message "Failed to download the package descriptor from $url" -Step 1 -MaxStep 1
+            Remove-Item -Path $packagePath -Recurse
+            continue
           }
 
           try
           {
+            #Get real package ID from XML attribute
             $packageID = $pkgXML.Package.id
           }
           catch
           {
-            Write-LogError("Could not find package ID for $url")
-            break
+            Write-LogError "Could not find package ID for $url"
+            Show-TSActionProgress -Message "Could not find package ID for $url" -Step 1 -MaxStep 1
+            continue
           }
           
           #Filter by Package Type and Reboot Type
@@ -670,14 +746,19 @@ try
             #Save package xml
             #Create a subfolder using package ID as the folder name
             $packagePath = Join-Path -Path $RepositoryPath -ChildPath $packageId
-            New-Item -ItemType "directory" -Force $packagePath | Out-Null
+            New-Item -ItemType Directory -Force $packagePath | Out-Null
 
             $packageFolderExists = Test-Path -Path $packagePath
             if ($packageFolderExists -eq $False)
             {
-              Write-LogError("Failed to create folder at the following path $RepositoryPath\$packageId"); Exit 1
+              Write-LogError "Failed to create folder at the following path $RepositoryPath\$packageId"
+              Show-TSActionProgress -Message "Failed to create folder at the following path $RepositoryPath\$packageId" -Step 1 -MaxStep 1
+              continue
             }
-            Write-LogInformation("Getting $packageID...")
+
+            Write-LogInformation "Getting $packageID..."
+            Show-TSActionProgress -Message "Getting $packageID..." -Step 1 -MaxStep 10
+
             #Gather data needed for dbxml
             $__packageID = $pkgXML.Package.id
             $__name = $pkgXML.Package.name
@@ -685,27 +766,44 @@ try
             $__filename = $url.SubString($url.LastIndexOf('/') + 1)
             $__version = $pkgXML.Package.version
             $__releasedate = $pkgXML.Package.ReleaseDate
-            $__size = $pkgXML.Package.Files.Installer.File.Size
+            #$__size = $pkgXML.Package.Files.Installer.File.Size
+            $__size = 0
             $__url = $url.SubString(0, $url.LastIndexOf('/') + 1)
             $__localRepositoryPath = [IO.Path]::Combine($RepositoryPath, $__packageID, $__filename)
             $__localpath = [IO.Path]::Combine("\", $__packageID, $__filename)
             $__severity = $severities[$pkgXML.Package.Severity.type]
-
-            #alter Reboot Type 5 to 3 if RT5toRT3 is specified
-            if (($RT5toRT3) -and ($pkgXML.Package.Reboot.type -eq '5'))
+            
+            try
             {
-              $pkgXML.Package.Reboot.type = '3'
+              (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $__localRepositoryPath)
+                            
+              #alter Reboot Type 5 to 3 if RT5toRT3 is specified
+              if (($RT5toRT3.IsPresent) -and ($pkgXML.Package.Reboot.type -eq '5'))
+              {
+                Write-LogInformation "Changing reboot type for $packageID"
+                $xml = [xml](Get-Content -Path $__localRepositoryPath)
+                $xml.Package.Reboot.type = '3'
+                $xml.Save($__localRepositoryPath)
+              }
+            }
+            catch
+            {
+              Write-LogError "Failed to save xml at the following path $($__localRepositoryPath)"
+              Show-TSActionProgress -Message "Failed to save xml at the following path $($__localRepositoryPath)" -Step 1 -MaxStep 1
+              continue
             }
 
-            $pkgXML.Save($__localRepositoryPath)
-
-            #Load package descriptor XML and download each of the files referenced under the <Files> tag. Skip Installer if -ScanOnly specified.
-            #Note that the files will be located at the same relative path as the package descriptor XML on https://download.lenovo.com/...
+            <#  
+              Load package descriptor XML and download each of the files referenced under the <Files> tag.
+              Note that the files will be located at the same relative path as the package descriptor XML on https://download.lenovo.com/...
+            #>
             $fileNameElements = @()
             $installerFile = @()
             $readmeFile = @()
             $externalFiles = @()
-            Write-LogInformation("Get files for downloading...")
+            Write-LogInformation "Get files for downloading..."
+            Show-TSActionProgress -Message "Get files for downloading..." -Step 4 -MaxStep 10
+
             $installerFile = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("Installer").GetElementsByTagName("File")
             try
             {
@@ -713,7 +811,7 @@ try
             }
             catch
             {
-              Write-LogInformation("No readme file specified.")
+              Write-LogInformation "No readme file specified."
             }
             try
             {
@@ -721,16 +819,14 @@ try
             }
             catch
             {
-              Write-LogInformation("No external detection files specified.")
+              Write-LogInformation "No external detection files specified."
             }
                 
             if ($readmeFile) { $fileNameElements += $readmeFile }
             if ($externalFiles) { $fileNameElements += $externalFiles }
                 
-            if (-Not ($ScanOnly))
-            {
-              $fileNameElements += $installerFile
-            }
+            $fileNameElements += $installerFile
+
             #$fileNameElements = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("File")
             foreach ($element in $fileNameElements)
             {
@@ -740,27 +836,42 @@ try
 
               $fileUrl = $__url + "/" + $filename
               $fileDestinationPath = [IO.Path]::Combine($RepositoryPath, $__packageID, $filename)
-              $fileDownloadResult = Get-File -Url $fileUrl `
-                -DestinationPath $fileDestinationPath `
-                -ExpectedFileSize $expectedFileSize `
-                -ExpectedFileCRC $expectedFileCRC
+
+              try
+              {
+                $fileDownloadParams = @{
+                  Url              = $fileUrl
+                  DestinationPath  = $fileDestinationPath
+                  ExpectedFileSize = $expectedFileSize
+                  ExpectedFileCRC  = $expectedFileCRC
+                }
+
+                $fileDownloadResult = Get-File @fileDownloadParams
+              }
+              catch
+              {
+                Write-LogError($_)
+              }                            
                 
               #Delete the package folder if one of the files did not download or the size or CRC is invalid
               if ($fileDownloadResult -eq $false)
               {
-                Write-LogWarning("Failed to download the file $__url/$filename. Package $__packageID will be deleted")
+                Write-LogWarning "Failed to download the file $__url/$filename. Package $__packageID will be deleted"
+                Show-TSActionProgress -Message "Failed to download the file $__url/$filename. Package $__packageID will be deleted" -Step 1 -MaxStep 1
                 $packageFolder = [IO.Path]::Combine($RepositoryPath, $__packageID)
-                Remove-Item $packageFolder -Recurse
+                Remove-Item -Path $packageFolder -Recurse
 
                 break
               }
               else
               {
-                Write-LogInformation("Downloaded $filename")
+                $__size += $expectedFileSize
+                Write-LogInformation "Downloaded $filename"
+                Show-TSActionProgress -Message "Downloaded $filename" -Step 8 -MaxStep 10
               }
             }
 
-            #Build xml elements for dbxml
+            #region Build xml elements
             $_package = $dbxml.CreateElement("Package")
             $_package.SetAttribute("id", $__packageID) | Out-Null
             $_package.SetAttribute("name", $__name) | Out-Null
@@ -836,6 +947,7 @@ try
             $_package.AppendChild($sub13) | Out-Null
 
             $dbxml.LastChild.AppendChild($_package) | Out-Null
+            #endregion
           }
         }
       }
@@ -844,15 +956,17 @@ try
     {
       Write-LogWarning "Skipping $mt as it is not a valid machine type."
     }
-  
   }
   
-  #3. Write dbxml file
+  <#
+    3.
+        Write dbxml file
+  #>
   $databaseXmlPath = Join-Path -Path $RepositoryPath -ChildPath "database.xml"
   $dbxml.Save($databaseXmlPath)
     
   Write-LogInformation "Script execution finished."
-
+  Show-TSActionProgress -Message "Packages have been downloaded." -Step 10 -MaxStep 10
 }
 catch
 {
