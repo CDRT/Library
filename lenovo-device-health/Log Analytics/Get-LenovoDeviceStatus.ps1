@@ -121,6 +121,7 @@ else
         else
         {
             Write-Output "LDMM ZIP file already exists. Skipping download."
+            Expand-Archive -Path (Join-Path -Path $ModuleTemp -ChildPath ldmm_1.0.0.zip) -DestinationPath $ModulePath -Force
         }
 
         # Check if the module was imported successfully
