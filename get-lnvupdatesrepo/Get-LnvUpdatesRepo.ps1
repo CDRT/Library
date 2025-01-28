@@ -1,17 +1,17 @@
 <#
   DISCLAIMER:
-  These sample scripts are not supported under any Lenovo standard support  
-  program or service. The sample scripts are provided AS IS without warranty  
-  of any kind. Lenovo further disclaims all implied warranties including,  
-  without limitation, any implied warranties of merchantability or of fitness for  
-  a particular purpose. The entire risk arising out of the use or performance of  
-  the sample scripts and documentation remains with you. In no event shall  
-  Lenovo, its authors, or anyone else involved in the creation, production, or  
-  delivery of the scripts be liable for any damages whatsoever (including,  
-  without limitation, damages for loss of business profits, business interruption,  
-  loss of business information, or other pecuniary loss) arising out of the use  
-  of or inability to use the sample scripts or documentation, even if Lenovo  
-  has been advised of the possibility of such damages. 
+  These sample scripts are not supported under any Lenovo standard support
+  program or service. The sample scripts are provided AS IS without warranty
+  of any kind. Lenovo further disclaims all implied warranties including,
+  without limitation, any implied warranties of merchantability or of fitness for
+  a particular purpose. The entire risk arising out of the use or performance of
+  the sample scripts and documentation remains with you. In no event shall
+  Lenovo, its authors, or anyone else involved in the creation, production, or
+  delivery of the scripts be liable for any damages whatsoever (including,
+  without limitation, damages for loss of business profits, business interruption,
+  loss of business information, or other pecuniary loss) arising out of the use
+  of or inability to use the sample scripts or documentation, even if Lenovo
+  has been advised of the possibility of such damages.
 #>
 
 <#
@@ -20,10 +20,10 @@
   and store in an Update Retriever style local repository.
 
   .DESCRIPTION
-  For instances where Update Retriever cannot be used to create the local 
-  repository or where full automation of the repository creation is desired. 
-  This PowerShell script can be customized and executed on a regular basis to 
-  get the latest update packages. 
+  For instances where Update Retriever cannot be used to create the local
+  repository or where full automation of the repository creation is desired.
+  This PowerShell script can be customized and executed on a regular basis to
+  get the latest update packages.
 
   .PARAMETER MachineTypes
   Mandatory: False
@@ -43,13 +43,13 @@
   .PARAMETER PackageTypes
   Mandatory: False
   Data type: String
-  Must be a string of Package Type integers separated by commas and surrounded 
+  Must be a string of Package Type integers separated by commas and surrounded
   by single quotes. The possible values are:
   1: Application
   2: Driver
   3: BIOS
   4: Firmware
-  
+
   The default if no value is specified will be all package types.
 
   .PARAMETER RebootTypes
@@ -73,13 +73,13 @@
   .PARAMETER LogPath
   Mandatory: False
   Data type: String
-  Must be a fully qualified path. If not specified, ti-auto-repo.log will be 
+  Must be a fully qualified path. If not specified, ti-auto-repo.log will be
   stored in the repository folder. Must be surrounded by single quotes.
 
   .PARAMETER RT5toRT3
   Mandatory: False
   Data type: Switch
-  Specify this parameter if you want to convert Reboot Type 5 (Delayed Forced 
+  Specify this parameter if you want to convert Reboot Type 5 (Delayed Forced
   Reboot) packages to be Reboot Type 3 (Requires Reboot). Only do this in
   task sequence scenarios where a Restart can be performed after the Thin
   Installer task. Use the -noreboot parameter on the Thin Installer command
@@ -89,10 +89,10 @@
 
   .EXAMPLE
   Get-LnvUpdatesRepo.ps1 -RepositoryPath 'C:\Program Files (x86)\Lenovo\ThinInstaller\Repository' -PackageTypes '1,2' -RebootTypes '0,3'
-  
+
   .EXAMPLE
   Get-LnvUpdatesRepo.ps1 -RepositoryPath 'Z:\21DD' -PackageTypes '1,2,3' -RebootTypes '0,3,5' -RT5toRT3
- 
+
   .INPUTS
   None.
 
@@ -107,6 +107,8 @@
     - Removed ScanOnly parameter
     - Adjust logic for saving content to local repo.
     - Additional formatting
+  #Version 2.1 - 2025-01-28
+    - Improve logging and TS GUI experience to now show package size in MB
 #>
 
 Param(
@@ -124,7 +126,7 @@ Param(
 
   [Parameter(Mandatory = $true)]
   [string]$RepositoryPath,
-  
+
   [Parameter(Mandatory = $false)]
   [string]$LogPath,
 
@@ -166,7 +168,7 @@ function Write-LogError
     [Parameter(Mandatory = $true)]
     [string]$Message
   )
-  $logline = "[LNV_ERROR_$((Get-Date).ToString("yyyy-MM-ddTHH:mm:ss"))]: $Message" 
+  $logline = "[LNV_ERROR_$((Get-Date).ToString("yyyy-MM-ddTHH:mm:ss"))]: $Message"
   Out-File -FilePath "$LogPath" -InputObject $logline -Append -NoClobber -Force
   return $logline
 }
@@ -190,7 +192,7 @@ function Write-LogInformation
   )
   $logline = "[LNV_INFORMATION_$((Get-Date).ToString("yyyy-MM-ddTHH:mm:ss"))]: $Message"
   Out-File -FilePath "$LogPath" -InputObject $logline -Append -NoClobber
-  return $logline 
+  return $logline
 }
 #endregion
 
@@ -207,7 +209,7 @@ function Get-XmlFile
   #Retry policy
   $stop = $false
   $retryCount = 0
- 
+
   do
   {
     try
@@ -249,7 +251,7 @@ function Get-File
   #Retry policy
   $stop = $false
   $retryCount = 0
- 
+
   do
   {
     try
@@ -284,7 +286,7 @@ function Get-File
           Start-Sleep -Seconds 5
           $retrycount = $retrycount + 1
         }
-      } 
+      }
     }
     catch
     {
@@ -310,12 +312,12 @@ function Confirm-Parameters
     -Mandatory $true `
     -RegEx "^((?:~?\/)|(?:(?:\\\\\?\\)?[a-zA-Z]+\:))(?:\/?(.*))?$" `
     -ErrorMessage "RepositoryPath parameter must be a properly formatted and fully qualified path to an existing folder where the local repository resides."
-  
+
   Confirm-ParameterPattern -Value $LogPath `
     -Mandatory $false `
     -RegEx "^((?:~?\/)|(?:(?:\\\\\?\\)?[a-zA-Z]+\:))(?:\/?(.*))?$" `
     -ErrorMessage "LogPath parameter must be a properly formatted and fully qualified path to file"
-  
+
   $trimmedMachineTypes = $MachineTypes.Trim()
   if ($trimmedMachineTypes -eq '')
   {
@@ -330,7 +332,7 @@ function Confirm-Parameters
   {
     $global:MachineTypesArray = $trimmedMachineTypes -split ',' -replace '^\s+|\s+$'
   }
-   
+
   if ($global:MachineTypesArray.Length -eq 0)
   {
     Write-LogError "MachineTypes parameter must contain at least one four character machine type of a Lenovo PC."; Exit 1
@@ -528,13 +530,13 @@ if ($OS -eq '')
   if ($OS -match '10.0.1')
   {
     $global:OS = 'Win10'
-    $global:OSName = 'Windows 10'  
+    $global:OSName = 'Windows 10'
   }
   elseif ($OS -match '10.0.2')
   {
     $global:OS = 'Win11'
     $global:OSName = 'Windows 11'
-  }  
+  }
 }
 elseif ($OS -eq '10')
 {
@@ -607,13 +609,13 @@ function Show-TSActionProgress()
 
 Confirm-TSProgressUISetup
 Confirm-TSEnvironmentSetup
-
+#>
 $ErrorActionPreference = 'SilentlyContinue'
 
 try
 {
   Confirm-Parameters
-  
+
   <#
     If the repository folder already exists:
       * Comment or uncomment lines within the 'if' clause below to achieve the desired behavior.
@@ -653,7 +655,7 @@ try
   $dbxsd.Save($databaseXsdPath)
 
   <#
-    1.2 
+    1.2
       Create an XML document object to contain database.xml
       Array of severities to translate integer into string
   #>
@@ -698,7 +700,7 @@ try
 
         $packages.Add($packageId, $url)
       }
-      
+
       $packagesCount = $packages.Count
       Write-LogInformation "Found $packagesCount for the system"
       Show-TSActionProgress -Message "Found $packagesCount updates for the system" -Step 1 -MaxStep 1
@@ -739,7 +741,7 @@ try
             Show-TSActionProgress -Message "Could not find package ID for $url" -Step 1 -MaxStep 1
             continue
           }
-          
+
           #Filter by Package Type and Reboot Type
           if (($global:rt -contains $pkgXML.Package.Reboot.type) -and ($global:pt -contains $pkgXML.Package.PackageType.type))
           {
@@ -772,13 +774,13 @@ try
             $__localRepositoryPath = [IO.Path]::Combine($RepositoryPath, $__packageID, $__filename)
             $__localpath = [IO.Path]::Combine("\", $__packageID, $__filename)
             $__severity = $severities[$pkgXML.Package.Severity.type]
-            
+
             try
             {
               (New-Object -TypeName System.Net.WebClient).DownloadFile($url, $__localRepositoryPath)
-                            
+
               #alter Reboot Type 5 to 3 if RT5toRT3 is specified
-              if (($RT5toRT3.IsPresent) -and ($pkgXML.Package.Reboot.type -eq '5'))
+              if (($RT5toRT3) -and ($pkgXML.Package.Reboot.type -eq '5'))
               {
                 Write-LogInformation "Changing reboot type for $packageID"
                 $xml = [xml](Get-Content -Path $__localRepositoryPath)
@@ -793,7 +795,7 @@ try
               continue
             }
 
-            <#  
+            <#
               Load package descriptor XML and download each of the files referenced under the <Files> tag.
               Note that the files will be located at the same relative path as the package descriptor XML on https://download.lenovo.com/...
             #>
@@ -821,10 +823,10 @@ try
             {
               Write-LogInformation "No external detection files specified."
             }
-                
+
             if ($readmeFile) { $fileNameElements += $readmeFile }
             if ($externalFiles) { $fileNameElements += $externalFiles }
-                
+
             $fileNameElements += $installerFile
 
             #$fileNameElements = $pkgXML.GetElementsByTagName("Files").GetElementsByTagName("File")
@@ -846,13 +848,16 @@ try
                   ExpectedFileCRC  = $expectedFileCRC
                 }
 
+                $ExpectedFileSizeMB = [math]::round($ExpectedFileSize / 1Mb, 2)
+                Write-LogInformation "Downloading $filename ($ExpectedFileSizeMB MB)"
+                Show-TSActionProgress -Message "Downloading $filename ($ExpectedFileSizeMB MB)" -Step 6 -MaxStep 10
                 $fileDownloadResult = Get-File @fileDownloadParams
               }
               catch
               {
                 Write-LogError($_)
-              }                            
-                
+              }
+
               #Delete the package folder if one of the files did not download or the size or CRC is invalid
               if ($fileDownloadResult -eq $false)
               {
@@ -957,14 +962,14 @@ try
       Write-LogWarning "Skipping $mt as it is not a valid machine type."
     }
   }
-  
+
   <#
     3.
         Write dbxml file
   #>
   $databaseXmlPath = Join-Path -Path $RepositoryPath -ChildPath "database.xml"
   $dbxml.Save($databaseXmlPath)
-    
+
   Write-LogInformation "Script execution finished."
   Show-TSActionProgress -Message "Packages have been downloaded." -Step 10 -MaxStep 10
 }
