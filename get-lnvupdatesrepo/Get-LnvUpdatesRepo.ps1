@@ -109,6 +109,8 @@
     - Additional formatting
   #Version 2.1 - 2025-01-28
     - Improve logging and TS GUI experience to now show package size in MB
+  #Version 2.2 - 2025-01-31
+    - Remove cleanup code in case of missing package XML descriptor in catalog
 #>
 
 Param(
@@ -591,9 +593,6 @@ function Show-TSActionProgress()
     [long] $MaxStep
   )
 
-  Confirm-TSProgressUISetup
-  Confirm-TSEnvironmentSetup
-
   $Script:TaskSequenceProgressUi.ShowActionProgress(`
       $Script:TaskSequenceEnvironment.Value("_SMSTSOrgName"), `
       $Script:TaskSequenceEnvironment.Value("_SMSTSPackageName"), `
@@ -609,7 +608,7 @@ function Show-TSActionProgress()
 
 Confirm-TSProgressUISetup
 Confirm-TSEnvironmentSetup
-#>
+
 $ErrorActionPreference = 'SilentlyContinue'
 
 try
@@ -696,7 +695,7 @@ try
       {
         $filename = $url.Substring($url.LastIndexOf("/") + 1)
         $separatorIndex = $filename.IndexOf('.')
-        $packageID = $filename.Substring(0, $separatorIndex - 3)
+        $packageId = $filename.Substring(0, $separatorIndex - 3)
 
         $packages.Add($packageId, $url)
       }
@@ -726,14 +725,13 @@ try
           {
             Write-LogError "Failed to download the package descriptor from $url"
             Show-TSActionProgress -Message "Failed to download the package descriptor from $url" -Step 1 -MaxStep 1
-            Remove-Item -Path $packagePath -Recurse
             continue
           }
 
           try
           {
             #Get real package ID from XML attribute
-            $packageID = $pkgXML.Package.id
+            $packageId = $pkgXML.Package.id
           }
           catch
           {
@@ -758,8 +756,8 @@ try
               continue
             }
 
-            Write-LogInformation "Getting $packageID..."
-            Show-TSActionProgress -Message "Getting $packageID..." -Step 1 -MaxStep 10
+            Write-LogInformation "Getting $packageId..."
+            Show-TSActionProgress -Message "Getting $packageId..." -Step 1 -MaxStep 10
 
             #Gather data needed for dbxml
             $__packageID = $pkgXML.Package.id
@@ -782,7 +780,7 @@ try
               #alter Reboot Type 5 to 3 if RT5toRT3 is specified
               if (($RT5toRT3) -and ($pkgXML.Package.Reboot.type -eq '5'))
               {
-                Write-LogInformation "Changing reboot type for $packageID"
+                Write-LogInformation "Changing reboot type for $packageId"
                 $xml = [xml](Get-Content -Path $__localRepositoryPath)
                 $xml.Package.Reboot.type = '3'
                 $xml.Save($__localRepositoryPath)
