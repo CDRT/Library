@@ -1,0 +1,188 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Creates the Lenovo device health custom tables and a Data Collection Rule for the Azure Monitor Logs Ingestion API. Deploy to the resource group that contains the Log Analytics workspace. The Data Collection Endpoint must exist first, in the same region as the workspace."
+  },
+  "parameters": {
+    "workspaceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the existing Log Analytics workspace in this resource group."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Region of the Data Collection Rule. Must match the region of the Log Analytics workspace."
+      }
+    },
+    "dataCollectionEndpointResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the existing Data Collection Endpoint. Copy it from the JSON View of the endpoint."
+      }
+    },
+    "dataCollectionRuleName": {
+      "type": "string",
+      "defaultValue": "dcr-lenovo-device-health",
+      "metadata": {
+        "description": "Name of the Data Collection Rule to create."
+      }
+    },
+    "servicePrincipalObjectId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Object ID of the Enterprise application (service principal) used by the Remediation script. When provided, it's assigned the Monitoring Metrics Publisher role on the Data Collection Rule."
+      }
+    },
+    "deployTables": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Set to false when the existing Lenovo_Device_Health_CL and Lenovo_Device_Properties_CL tables were migrated from the HTTP Data Collector API."
+      }
+    }
+  },
+  "variables": {
+    "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]",
+    "healthTableName": "Lenovo_Device_Health_CL",
+    "propertiesTableName": "Lenovo_Device_Properties_CL",
+    "monitoringMetricsPublisherRoleId": "3913510d-42f4-4e42-8a64-420c390055eb"
+  },
+  "resources": [
+    {
+      "condition": "[parameters('deployTables')]",
+      "type": "Microsoft.OperationalInsights/workspaces/tables",
+      "apiVersion": "2022-10-01",
+      "name": "[format('{0}/{1}', parameters('workspaceName'), variables('healthTableName'))]",
+      "properties": {
+        "schema": {
+          "name": "[variables('healthTableName')]",
+          "columns": [
+            { "name": "TimeGenerated", "type": "dateTime", "description": "Time the inventory was collected on the device" },
+            { "name": "Hostname_s", "type": "string", "description": "Computer name" },
+            { "name": "PackageID_s", "type": "string", "description": "Update package ID" },
+            { "name": "Severity_s", "type": "string", "description": "Update severity" },
+            { "name": "Status_s", "type": "string", "description": "Update install status" },
+            { "name": "Title_s", "type": "string", "description": "Update title" },
+            { "name": "Version_s", "type": "string", "description": "Update version" }
+          ]
+        }
+      }
+    },
+    {
+      "condition": "[parameters('deployTables')]",
+      "type": "Microsoft.OperationalInsights/workspaces/tables",
+      "apiVersion": "2022-10-01",
+      "name": "[format('{0}/{1}', parameters('workspaceName'), variables('propertiesTableName'))]",
+      "properties": {
+        "schema": {
+          "name": "[variables('propertiesTableName')]",
+          "columns": [
+            { "name": "TimeGenerated", "type": "dateTime", "description": "Time the inventory was collected on the device" },
+            { "name": "Hostname_s", "type": "string", "description": "Computer name" },
+            { "name": "MTM_s", "type": "string", "description": "Machine type" },
+            { "name": "Product_s", "type": "string", "description": "Product family name" },
+            { "name": "Serial_s", "type": "string", "description": "Serial number" },
+            { "name": "BatteryHealth_s", "type": "string", "description": "Battery health reported by Commercial Vantage" },
+            { "name": "WarrantyEnd_s", "type": "string", "description": "Warranty end date (yyyy-MM-dd)" },
+            { "name": "InstalledBiosVersion_s", "type": "string", "description": "Installed BIOS version" },
+            { "name": "CVE_s", "type": "string", "description": "CVEs addressed by the latest available BIOS" },
+            { "name": "AvailableBiosVersion_s", "type": "string", "description": "Latest available BIOS version" }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Insights/dataCollectionRules",
+      "apiVersion": "2023-03-11",
+      "name": "[parameters('dataCollectionRuleName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces/tables', parameters('workspaceName'), variables('healthTableName'))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces/tables', parameters('workspaceName'), variables('propertiesTableName'))]"
+      ],
+      "properties": {
+        "description": "Lenovo device health inventory sent from the Get-LenovoDeviceStatus.ps1 Remediation script",
+        "dataCollectionEndpointId": "[parameters('dataCollectionEndpointResourceId')]",
+        "streamDeclarations": {
+          "Custom-LenovoDeviceHealth": {
+            "columns": [
+              { "name": "TimeGenerated", "type": "datetime" },
+              { "name": "Hostname", "type": "string" },
+              { "name": "PackageID", "type": "string" },
+              { "name": "Severity", "type": "string" },
+              { "name": "Status", "type": "string" },
+              { "name": "Title", "type": "string" },
+              { "name": "Version", "type": "string" }
+            ]
+          },
+          "Custom-LenovoDeviceProperties": {
+            "columns": [
+              { "name": "TimeGenerated", "type": "datetime" },
+              { "name": "Hostname", "type": "string" },
+              { "name": "MTM", "type": "string" },
+              { "name": "Product", "type": "string" },
+              { "name": "Serial", "type": "string" },
+              { "name": "BatteryHealth", "type": "string" },
+              { "name": "WarrantyEnd", "type": "string" },
+              { "name": "InstalledBiosVersion", "type": "string" },
+              { "name": "CVE", "type": "dynamic" },
+              { "name": "AvailableBiosVersion", "type": "string" }
+            ]
+          }
+        },
+        "destinations": {
+          "logAnalytics": [
+            {
+              "workspaceResourceId": "[variables('workspaceResourceId')]",
+              "name": "lenovoWorkspace"
+            }
+          ]
+        },
+        "dataFlows": [
+          {
+            "streams": [ "Custom-LenovoDeviceHealth" ],
+            "destinations": [ "lenovoWorkspace" ],
+            "transformKql": "source | project TimeGenerated, Hostname_s = Hostname, PackageID_s = PackageID, Severity_s = Severity, Status_s = Status, Title_s = Title, Version_s = Version",
+            "outputStream": "[format('Custom-{0}', variables('healthTableName'))]"
+          },
+          {
+            "streams": [ "Custom-LenovoDeviceProperties" ],
+            "destinations": [ "lenovoWorkspace" ],
+            "transformKql": "source | project TimeGenerated, Hostname_s = Hostname, MTM_s = MTM, Product_s = Product, Serial_s = Serial, BatteryHealth_s = BatteryHealth, WarrantyEnd_s = WarrantyEnd, InstalledBiosVersion_s = InstalledBiosVersion, CVE_s = tostring(CVE), AvailableBiosVersion_s = AvailableBiosVersion",
+            "outputStream": "[format('Custom-{0}', variables('propertiesTableName'))]"
+          }
+        ]
+      }
+    },
+    {
+      "condition": "[not(empty(parameters('servicePrincipalObjectId')))]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[format('Microsoft.Insights/dataCollectionRules/{0}', parameters('dataCollectionRuleName'))]",
+      "name": "[guid(resourceId('Microsoft.Insights/dataCollectionRules', parameters('dataCollectionRuleName')), parameters('servicePrincipalObjectId'), variables('monitoringMetricsPublisherRoleId'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/dataCollectionRules', parameters('dataCollectionRuleName'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('monitoringMetricsPublisherRoleId'))]",
+        "principalId": "[parameters('servicePrincipalObjectId')]",
+        "principalType": "ServicePrincipal"
+      }
+    }
+  ],
+  "outputs": {
+    "dcrImmutableId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Insights/dataCollectionRules', parameters('dataCollectionRuleName')), '2023-03-11').immutableId]"
+    },
+    "logsIngestionEndpoint": {
+      "type": "string",
+      "value": "[reference(parameters('dataCollectionEndpointResourceId'), '2023-03-11').logsIngestion.endpoint]"
+    }
+  }
+}

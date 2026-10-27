@@ -8,240 +8,327 @@
         - Write warranty information to WMI table
         - Write battery information to WMI table
 
+    Data is sent to the Azure Monitor Logs Ingestion API through a Data Collection Endpoint and Data Collection Rule.
+    The app registration needs the Monitoring Metrics Publisher role on the Data Collection Rule.
+
 .EXAMPLE
     Get-LenovoDeviceStatus.ps1
 
 .NOTES
     Author: Philip Jorgensen
     Created: 2022-09-26
-    Updated: 2024-02-06
+    Updated: 2026-10-22
 
     Version history:
     1.0.0 - (2022-09-26) Script created
     1.0.1 - (2024-02-06) Script redesign to include LDMM (Lenovo Device Management Module) for gathering additional data.
+    2.0.0 - (2026-10-22) Send data with the Logs Ingestion API in place of the deprecated HTTP Data Collector API.
+                         Replace LDMM with the Lenovo Client Scripting Module from the PowerShell Gallery.
 #>
 
-# Replace with your Log Analytics Workspace ID
-$customerId = ""  
+# Replace with the Directory (tenant) ID of the app registration
+$TenantId = ''
 
-# Replace with your Primary Key
-$sharedKey = ""
+# Replace with the Application (client) ID of the app registration
+$ClientId = ''
 
-# Specify the name of the record type that you'll be creating
-$logTypeDeviceHealth = "Lenovo_Device_Health"
-$logTypeDeviceProperties = "Lenovo_Device_Properties"
+# Replace with the client secret value of the app registration
+$ClientSecret = ''
 
-<#  Create the functions to create the authorization signature
-    https://docs.microsoft.com/en-us/azure/azure-monitor/logs/data-collector-api
-#>
-$TimeStampField = ""
+# Replace with the logs ingestion endpoint of the Data Collection Endpoint
+$DceEndpoint = ''
+
+# Replace with the immutable ID of the Data Collection Rule
+$DcrImmutableId = ''
+
+# Stream names declared in the Data Collection Rule
+$StreamDeviceHealth = 'Custom-LenovoDeviceHealth'
+$StreamDeviceProperties = 'Custom-LenovoDeviceProperties'
+
+Set-StrictMode -Version 2.0
+$ErrorActionPreference = 'Stop'
 
 #region functions
-Function Build-Signature ($customerId, $sharedKey, $date, $contentLength, $method, $contentType, $resource)
+function Get-LogsIngestionToken
 {
-    $xHeaders = "x-ms-date:" + $date
-    $stringToHash = $method + "`n" + $contentLength + "`n" + $contentType + "`n" + $xHeaders + "`n" + $resource
+    [CmdletBinding()]
+    [OutputType([string])]
+    param (
+        [Parameter(Mandatory)]
+        [string]$TenantId,
 
-    $bytesToHash = [Text.Encoding]::UTF8.GetBytes($stringToHash)
-    $keyBytes = [Convert]::FromBase64String($sharedKey)
+        [Parameter(Mandatory)]
+        [string]$ClientId,
 
-    $sha256 = New-Object System.Security.Cryptography.HMACSHA256
-    $sha256.Key = $keyBytes
-    $calculatedHash = $sha256.ComputeHash($bytesToHash)
-    $encodedHash = [Convert]::ToBase64String($calculatedHash)
-    $authorization = 'SharedKey {0}:{1}' -f $customerId, $encodedHash
-    return $authorization
-}
+        [Parameter(Mandatory)]
+        [string]$ClientSecret
+    )
 
-# Create the function to create and post the request
-Function Post-LogAnalyticsData($customerId, $sharedKey, $body, $logType)
-{
-    $method = "POST"
-    $contentType = "application/json"
-    $resource = "/api/logs"
-    $rfc1123date = [DateTime]::UtcNow.ToString("r")
-    $contentLength = $body.Length
-    $signature = Build-Signature `
-        -customerId $customerId `
-        -sharedKey $sharedKey `
-        -date $rfc1123date `
-        -contentLength $contentLength `
-        -method $method `
-        -contentType $contentType `
-        -resource $resource
-    $uri = "https://" + $customerId + ".ods.opinsights.azure.com" + $resource + "?api-version=2016-04-01"
-
-    $headers = @{
-        "Authorization"        = $signature;
-        "Log-Type"             = $logType;
-        "x-ms-date"            = $rfc1123date;
-        "time-generated-field" = $TimeStampField;
+    $tokenParams = @{
+        Uri             = "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/token"
+        Method          = 'Post'
+        ContentType     = 'application/x-www-form-urlencoded'
+        Body            = @{
+            client_id     = $ClientId
+            client_secret = $ClientSecret
+            scope         = 'https://monitor.azure.com//.default'
+            grant_type    = 'client_credentials'
+        }
+        UseBasicParsing = $true
     }
 
-    $response = Invoke-WebRequest -Uri $uri -Method $method -ContentType $contentType -Headers $headers -Body $body -UseBasicParsing
-    return $response.StatusCode
+    (Invoke-RestMethod @tokenParams).access_token
+}
+
+function Send-LogsIngestionData
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [string]$Endpoint,
+
+        [Parameter(Mandatory)]
+        [string]$DcrImmutableId,
+
+        [Parameter(Mandatory)]
+        [string]$StreamName,
+
+        [Parameter(Mandatory)]
+        [string]$AccessToken,
+
+        [Parameter(Mandatory)]
+        [object[]]$Record
+    )
+
+    # The Logs Ingestion API expects a JSON array, even for a single record
+    $body = ConvertTo-Json -InputObject @($Record) -Depth 3
+
+    $sendParams = @{
+        Uri             = '{0}/dataCollectionRules/{1}/streams/{2}?api-version=2023-01-01' -f $Endpoint.TrimEnd('/'), $DcrImmutableId, $StreamName
+        Method          = 'Post'
+        ContentType     = 'application/json'
+        Headers         = @{ Authorization = "Bearer $AccessToken" }
+        Body            = [System.Text.Encoding]::UTF8.GetBytes($body)
+        UseBasicParsing = $true
+    }
+
+    # Returns 204 on success, non-success status codes throw
+    $null = Invoke-WebRequest @sendParams
 }
 #endregion functions
 
 ##############
 
-$ErrorActionPreference = 'SilentlyContinue'
+if ([string]::IsNullOrWhiteSpace($TenantId) -or [string]::IsNullOrWhiteSpace($ClientId) -or [string]::IsNullOrWhiteSpace($ClientSecret) -or
+    [string]::IsNullOrWhiteSpace($DceEndpoint) -or [string]::IsNullOrWhiteSpace($DcrImmutableId))
+{
+    Write-Output 'Logs Ingestion API variables are not set. Update the script with the app registration, DCE, and DCR values.'
+    exit 1
+}
 
 $ComputerSystem = Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_ComputerSystem
-if ($ComputerSystem.Manufacturer -ne "LENOVO")
+if ($ComputerSystem.Manufacturer -ne 'LENOVO')
 {
-    Write-Output "Not a Lenovo system..."; Exit 0
+    Write-Output 'Not a Lenovo system...'
+    exit 0
 }
 
-#region IMPORT LDMM
-# Download/Import LDMM
-if (Get-Module -ListAvailable -Name LnvDeviceManagement)
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+#region LCSM
+# Install the Lenovo Client Scripting Module for the CVE and available BIOS data
+$modules = @(
+    #'Lenovo.Client.Update'
+    'Lenovo.Client.Scripting'
+)
+
+# The gallery requires TLS 1.2, which Windows PowerShell 5.1 does not negotiate by default.
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+$moduleRoot = "$env:ProgramFiles\WindowsPowerShell\Modules"
+Write-Output "Modules will be installed to $moduleRoot"
+
+# Ensure the target root is on PSModulePath for this session.
+if (-not ($env:PSModulePath -split ';' -contains $moduleRoot))
 {
-    Write-Output "LDMM Already Installed"
+    $env:PSModulePath = $env:PSModulePath + ";$moduleRoot"
+    Write-Output "Added $moduleRoot to PSModulePath"
 }
-else
+
+foreach ($module in $modules)
 {
-    try
-    {
-        # URL to zip
-        $ModuleSource = "https://download.lenovo.com/cdrt/tools/ldmm_1.0.0.zip"
-        # PS module location
-        $ModulePath = [System.IO.Path]::Combine($env:ProgramFiles, "WindowsPowerShell", "Modules")
-
-        # Path to save zip
-        $ModuleTemp = [System.IO.Path]::Combine($env:ProgramData, "Lenovo")
-
-        # Check if the ZIP file already exists
-        if (-not (Test-Path -Path (Join-Path -Path $ModuleTemp -ChildPath ldmm_1.0.0.zip)))
-        {
-            # Download/Extract to PS modules directory
-            Invoke-WebRequest -Uri $ModuleSource -OutFile (Join-Path -Path $ModuleTemp -ChildPath ldmm_1.0.0.zip) -UseBasicParsing
-            Expand-Archive -Path (Join-Path -Path $ModuleTemp -ChildPath ldmm_1.0.0.zip) -DestinationPath $ModulePath -Force
-        }
-        else
-        {
-            Write-Output "LDMM ZIP file already exists. Skipping download."
-        }
-
-        # Check if the module was imported successfully
-        if (Get-Module -ListAvailable -Name LnvDeviceManagement)
-        {
-            Write-Output "LDMM Installed Successfully"
-        }
-        else
-        {
-            Write-Error "Failed to import LnvDeviceManagement module."
+    $params = @{
+        Uri  = 'https://www.powershellgallery.com/api/v2/FindPackagesById()'
+        Body = @{
+            '$filter' = 'IsLatestVersion eq true'
+            id        = "'$module'" # Extra quotes are required.
         }
     }
-    catch
+    $searchResult = Invoke-RestMethod @params
+    if (-not $searchResult)
     {
-        Write-Error -Message $_.Exception.Message
+        Write-Warning "$module was not found in the gallery. Skipping."
+        continue
     }
+
+    $installedVersion = Get-Module -Name $module -ListAvailable |
+        Sort-Object -Property Version -Descending |
+        Select-Object -First 1 -ExpandProperty Version
+
+    if ($installedVersion -and [version]$installedVersion -ge [version]$searchResult.properties.version)
+    {
+        Write-Output "$module $installedVersion is already installed. Skipping."
+        continue
+    }
+
+    # Download the module archive
+    Invoke-RestMethod -Uri $searchResult.content.src -OutFile module.zip
+
+    # Expand the archive to a versioned folder under the module root.
+    $params = @{
+        Path        = 'module.zip'
+        Destination = $moduleRoot |
+            Join-Path -ChildPath $module |
+            Join-Path -ChildPath $searchResult.properties.version
+        Force       = $true
+    }
+    Expand-Archive @params
+
+    # Clean up redundant package files.
+    Get-ChildItem -Path $params.Destination |
+        Where-Object Name -In @(
+            '_rels'
+            'package'
+            '[Content_Types].xml'
+            "$module.nuspec"
+        ) |
+        Remove-Item -Recurse
+    Write-Output "Installed $module $($searchResult.properties.version) to $($params.Destination)"
+
+    # Remove downloaded archive
+    Remove-Item -Path module.zip
 }
 
-#endregion LDMM
+
+$CVE = @()
+$AvailableBiosVersion = 'BIOS Data Unavailable'
+try
+{
+    Import-Module -Name $ModuleName
+    $CVE = @(Get-LnvCVE | Sort-Object)
+    $AvailableBiosVersion = (Get-LnvAvailableBiosVersion) -join '; '
+}
+catch
+{
+    Write-Output "Failed to retrieve CVE and available BIOS data: $($_.Exception.Message)"
+}
+#endregion LCSM
 
 #region WMICHECKS
-$CommercialVantage = (Get-AppxPackage -AllUsers | Where-Object { $_.Name -eq "E046963F.LenovoSettingsforEnterprise" })
+$CommercialVantage = Get-AppxPackage -AllUsers | Where-Object { $_.Name -eq 'E046963F.LenovoSettingsforEnterprise' }
 if ($null -eq $CommercialVantage)
 {
-    Write-Output "Commercial Vantage not installed"
+    Write-Output 'Commercial Vantage not installed'
 }
 
-$LenovoUpdates = Get-CimInstance -Namespace root/Lenovo -ClassName Lenovo_Updates
-if ($null -eq $LenovoUpdates)
+$LenovoUpdates = @(Get-CimInstance -Namespace root/Lenovo -ClassName Lenovo_Updates -ErrorAction SilentlyContinue)
+if ($LenovoUpdates.Count -eq 0)
 {
-    Write-Output "Lenovo Updates WMI class not present. Run Commercial Vantage and initiate a check for updates"
+    Write-Output 'Lenovo Updates WMI class not present. Run Commercial Vantage and initiate a check for updates'
 }
 
-if ($ComputerSystem.SystemFamily -match "ThinkPad")
+$Battery = $null
+if ($ComputerSystem.SystemFamily -match 'ThinkPad')
 {
-    $Battery = Get-CimInstance -Namespace root/Lenovo -ClassName Lenovo_Battery
-    if ($null -eq $Battery)
+    $BatteryInstance = Get-CimInstance -Namespace root/Lenovo -ClassName Lenovo_Battery -ErrorAction SilentlyContinue
+    if ($null -eq $BatteryInstance)
     {
-        $Battery = "Battery Data Unavailable"
-        Write-Output "Lenovo Battery WMI class not present. Enable the Commercial Vantage policy to write battery info to WMI"
+        $Battery = 'Battery Data Unavailable'
+        Write-Output 'Lenovo Battery WMI class not present. Enable the Commercial Vantage policy to write battery info to WMI'
     }
     else
     {
-        $Battery = $Battery.BatteryHealth
+        $Battery = $BatteryInstance.BatteryHealth
     }
 }
 
-$Warranty = Get-CimInstance -Namespace root/Lenovo -ClassName Lenovo_WarrantyInformation
-if ($null -eq $Warranty -or $Warranty.EndDate.Equals("null"))
+$WarrantyInstance = Get-CimInstance -Namespace root/Lenovo -ClassName Lenovo_WarrantyInformation -ErrorAction SilentlyContinue
+if ($null -eq $WarrantyInstance -or $WarrantyInstance.EndDate.Equals('null'))
 {
-    $Warranty = "Warranty Data Unavailable"
-    Write-Output "Lenovo Warranty WMI class not present. Enable the Commercial Vantage policy to write warranty information to WMI"
+    $Warranty = 'Warranty Data Unavailable'
+    Write-Output 'Lenovo Warranty WMI class not present. Enable the Commercial Vantage policy to write warranty information to WMI'
 }
 else
 {
     # Format warranty date for Azure Monitor Workbook
-    $s_Array = $Warranty.EndDate.Split("/")
-    if ($s_Array[0].Length -eq 1) { $s_Array[0] = "0" + $s_Array[0] }
-    if ($s_Array[1].Length -eq 1) { $s_Array[1] = "0" + $s_Array[1] }
-    $s_Array[2] = $s_Array[2].Substring(0, 4)
-    $Warranty = "{0}-{1}-{2}" -f $s_Array[2], $s_Array[0], $s_Array[1]
+    $DateParts = $WarrantyInstance.EndDate.Split('/')
+    if ($DateParts[0].Length -eq 1) { $DateParts[0] = '0' + $DateParts[0] }
+    if ($DateParts[1].Length -eq 1) { $DateParts[1] = '0' + $DateParts[1] }
+    $DateParts[2] = $DateParts[2].Substring(0, 4)
+    $Warranty = '{0}-{1}-{2}' -f $DateParts[2], $DateParts[0], $DateParts[1]
 }
 #endregion WMICHECKS
 
 #region INVENTORY
-$updateResults = foreach ($Update in $LenovoUpdates)
-{
-    [PSCustomObject]@{
-        Hostname  = $env:COMPUTERNAME
-        PackageID = $Update.PackageID
-        Severity  = $Update.Severity
-        Status    = $Update.Status
-        Title     = $Update.Title
-        Version   = $Update.Version
-    }
-}
+# Both tables share the same TimeGenerated so the workbook can join them
+$TimeGenerated = [DateTime]::UtcNow.ToString('o')
+$Bios = Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_BIOS
 
-$updateResultsJson = $updateResults | ConvertTo-Json
+$UpdateRecords = @(foreach ($Update in $LenovoUpdates)
+    {
+        [PSCustomObject]@{
+            TimeGenerated = $TimeGenerated
+            Hostname      = $env:COMPUTERNAME
+            PackageID     = [string]$Update.PackageID
+            Severity      = [string]$Update.Severity
+            Status        = [string]$Update.Status
+            Title         = [string]$Update.Title
+            Version       = [string]$Update.Version
+        }
+    })
 
-# Device Updates param splat
-$deviceUpdateParams = @{
-    CustomerId = $customerId
-    SharedKey  = $sharedKey
-    Body       = ([System.Text.Encoding]::UTF8.GetBytes($updateResultsJson))
-    LogType    = $logTypeDeviceHealth
-}
-
-$deviceProperties = [PSCustomObject]@{
+$DeviceProperties = [PSCustomObject]@{
+    TimeGenerated        = $TimeGenerated
     Hostname             = $env:COMPUTERNAME
     MTM                  = $ComputerSystem.Model.Substring(0, 4).Trim()
     Product              = $ComputerSystem.SystemFamily
-    Serial               = (Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_BIOS).SerialNumber
+    Serial               = $Bios.SerialNumber
     BatteryHealth        = $Battery
     WarrantyEnd          = $Warranty
-    InstalledBiosVersion = (Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_BIOS).SMBIOSBIOSVersion
-    CVE                  = Get-LnvCVE | Sort-Object
-    AvailableBiosVersion = Get-LnvAvailableBiosVersion
-}
-
-$devicePropertiesJson = $deviceProperties | ConvertTo-Json
-
-# Device Properties param splat
-$devicePropertyParams = @{
-    CustomerId = $customerId
-    SharedKey  = $sharedKey
-    Body       = ([System.Text.Encoding]::UTF8.GetBytes($devicePropertiesJson))
-    LogType    = $logTypeDeviceProperties
+    InstalledBiosVersion = $Bios.SMBIOSBIOSVersion
+    CVE                  = $CVE
+    AvailableBiosVersion = $AvailableBiosVersion
 }
 #endregion INVENTORY
 
 # Sending data to API
-$deviceHealthlogResponse = Post-LogAnalyticsData @deviceUpdateParams
-$devicePropertieslogResponse = Post-LogAnalyticsData @devicePropertyParams
-
-if ($deviceHealthlogResponse -and $devicePropertieslogResponse -match "200")
+try
 {
-    Write-Output "Data sent to Log Analytics"
+    $AccessToken = Get-LogsIngestionToken -TenantId $TenantId -ClientId $ClientId -ClientSecret $ClientSecret
+
+    $sendParams = @{
+        Endpoint       = $DceEndpoint
+        DcrImmutableId = $DcrImmutableId
+        AccessToken    = $AccessToken
+    }
+
+    if ($UpdateRecords.Count -gt 0)
+    {
+        Send-LogsIngestionData @sendParams -StreamName $StreamDeviceHealth -Record $UpdateRecords
+    }
+    Send-LogsIngestionData @sendParams -StreamName $StreamDeviceProperties -Record $DeviceProperties
+
+    Write-Output 'Data sent to Log Analytics'
 }
-else
+catch
 {
-    Write-Error "Failed to send data to Log Analytics. Health Response: $deviceHealthlogResponse, Properties Response: $devicePropertieslogResponse"
+    $ErrorMessage = $_.Exception.Message
+    if ($_.ErrorDetails)
+    {
+        $ErrorMessage = '{0} {1}' -f $ErrorMessage, $_.ErrorDetails.Message
+    }
+    Write-Output "Failed to send data to Log Analytics: $ErrorMessage"
+    exit 1
 }
 
-Exit 0
+exit 0

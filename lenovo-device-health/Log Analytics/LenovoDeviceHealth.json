@@ -4,10 +4,88 @@
     {
       "type": 1,
       "content": {
-        "json": "## Lenovo Device Health\n---\n\nWelcome to the Lenovo Device Health workbook. This workbook will help \n\n- Identify the status of updates that have been installed by Commercial Vantage on your endpoints\n- View battery health\n- Check warranty expiration\n- Review systems with active [CVEs](https://support.lenovo.com/product_security/ps500001-lenovo-product-security-advisories)\n\nVisit the [Lenovo Support Site](https://pcsupport.lenovo.com/) for the latest drivers, Bios, and Firmware.",
+        "json": "## Lenovo Device Health\n---\n\nWelcome to the Lenovo Device Health workbook. This workbook will help \n\n- Identify the status of updates that have been installed by Commercial Vantage or Lenovo Client Update on your endpoints\n- View battery health\n- Check warranty expiration\n- Find devices that have stopped reporting\n- Review systems with active [CVEs](https://support.lenovo.com/product_security/ps500001-lenovo-product-security-advisories)\n\nVisit the [Lenovo Support Site](https://pcsupport.lenovo.com/) for the latest drivers, BIOS, and firmware.",
         "style": "info"
       },
       "name": "Title"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "0b7a3c51-5d2e-4f8a-9c61-7e2f4a9d1b01",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": "Time Range",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 2592000000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ],
+              "allowCustom": true
+            }
+          },
+          {
+            "id": "0b7a3c51-5d2e-4f8a-9c61-7e2f4a9d1b02",
+            "version": "KqlParameterItem/1.0",
+            "name": "Product",
+            "type": 2,
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "Lenovo_Device_Properties_CL\r\n| summarize by Product_s\r\n| order by Product_s asc",
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "showDefault": false
+            },
+            "defaultValue": "value::all",
+            "timeContext": {
+              "durationMs": 2592000000
+            },
+            "timeContextFromParameter": "TimeRange",
+            "queryType": 0,
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "value": [
+              "value::all"
+            ]
+          },
+          {
+            "id": "0b7a3c51-5d2e-4f8a-9c61-7e2f4a9d1b03",
+            "version": "KqlParameterItem/1.0",
+            "name": "Tab",
+            "type": 1,
+            "value": "Overview",
+            "isHiddenWhenLocked": true
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "GlobalParameters"
     },
     {
       "type": 11,
@@ -16,24 +94,31 @@
         "style": "tabs",
         "links": [
           {
-            "id": "44d4f371-c779-48d2-978d-b770f9dca3e9",
+            "id": "5e1d2c3b-4a59-4687-b7c8-d9e0f1a2b301",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Overview",
+            "subTarget": "Overview",
+            "style": "link"
+          },
+          {
+            "id": "5e1d2c3b-4a59-4687-b7c8-d9e0f1a2b302",
             "cellValue": "Tab",
             "linkTarget": "parameter",
             "linkLabel": "Update Status",
             "subTarget": "Updates",
-            "preText": "Update Status",
             "style": "link"
           },
           {
-            "id": "4b8a25f7-5274-4d63-8077-58dbb60fe21a",
+            "id": "5e1d2c3b-4a59-4687-b7c8-d9e0f1a2b303",
             "cellValue": "Tab",
             "linkTarget": "parameter",
-            "linkLabel": "Bios",
-            "subTarget": "Bios",
+            "linkLabel": "BIOS",
+            "subTarget": "BIOS",
             "style": "link"
           },
           {
-            "id": "163e944a-e870-4d30-9904-698ef3e5397b",
+            "id": "5e1d2c3b-4a59-4687-b7c8-d9e0f1a2b304",
             "cellValue": "Tab",
             "linkTarget": "parameter",
             "linkLabel": "Battery Health",
@@ -41,7 +126,7 @@
             "style": "link"
           },
           {
-            "id": "9c148bd6-5000-4ef9-a822-34af7715e573",
+            "id": "5e1d2c3b-4a59-4687-b7c8-d9e0f1a2b305",
             "cellValue": "Tab",
             "linkTarget": "parameter",
             "linkLabel": "Warranty",
@@ -57,274 +142,382 @@
       "content": {
         "version": "NotebookGroup/1.0",
         "groupType": "editable",
-        "title": "Update Details",
         "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "Counts use the most recent inventory from each device in the selected time range. Devices that stopped reporting before the time range began are not listed. With the Remediation on a weekly schedule, a device that has not reported in more than 7 days has missed a run."
+            },
+            "name": "OverviewDescription"
+          },
           {
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "Lenovo_Device_Health_CL\r\n| where Status_s == 'InstallSuccess'\r\n    or Status_s == 'InstallFailed'\r\n    or Status_s == 'DownloadFailed'\r\n    or Status_s == 'AlreadyInstalled'\r\n    or Status_s == 'Applicable'\r\n    or Status_s == 'DownloadFailed'\r\n| distinct Status_s, PackageID_s\r\n| summarize Lenovo_Device_Health_CL = count() by Status_s\r\n| render piechart",
+              "query": "let Devices = Lenovo_Device_Properties_CL\r\n    | summarize arg_max(TimeGenerated, *) by Hostname_s\r\n    | where Product_s in ({Product});\r\nlet Updates = Lenovo_Device_Health_CL\r\n    | join kind=inner (\r\n        Lenovo_Device_Health_CL\r\n        | summarize TimeGenerated = max(TimeGenerated) by Hostname_s\r\n        ) on Hostname_s, TimeGenerated\r\n    | join kind=inner (Devices | project Hostname_s, Product_s, MTM_s) on Hostname_s;\r\nunion\r\n    (Devices | summarize Value = count() | extend Metric = 'Devices Reporting', Order = 1),\r\n    (Devices\r\n| extend BiosStatus = case(\r\n    AvailableBiosVersion_s contains 'is current', 'Current',\r\n    AvailableBiosVersion_s contains 'Available version', 'Out of Date',\r\n    'Unavailable')\r\n    | where BiosStatus == 'Out of Date'\r\n    | summarize Value = count() | extend Metric = 'BIOS Out of Date', Order = 2),\r\n    (Updates\r\n    | where Status_s in ('Applicable', 'NotInstalled') or Status_s contains 'Fail'\r\n    | summarize Value = dcount(Hostname_s) | extend Metric = 'Devices With Pending or Failed Updates', Order = 3),\r\n    (Devices | where BatteryHealth_s == 'Red' | summarize Value = count() | extend Metric = 'Batteries in Red Health', Order = 4),\r\n    (Devices\r\n    | extend EndDate = todatetime(WarrantyEnd_s)\r\n    | where EndDate >= now() and EndDate < now(90d)\r\n    | summarize Value = count() | extend Metric = 'Warranties Expiring Within 90 Days', Order = 5),\r\n    (Devices | where TimeGenerated < ago(7d) | summarize Value = count() | extend Metric = 'Not Reported in 7+ Days', Order = 6)\r\n| order by Order asc\r\n| project Metric, Value",
               "size": 3,
-              "title": "Last 30 Days",
-              "noDataMessageStyle": 5,
-              "timeContext": {
-                "durationMs": 2592000000
-              },
+              "title": "Fleet Summary (Latest Inventory per Device)",
+              "noDataMessage": "No inventory found. Verify devices have run the Remediation.",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Metric",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "Value",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "blue"
+                  },
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "style": "decimal",
+                      "maximumFractionDigits": 0
+                    }
+                  }
+                },
+                "showBorder": true
+              }
+            },
+            "name": "OverviewTiles"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let Devices = Lenovo_Device_Properties_CL\r\n    | summarize arg_max(TimeGenerated, *) by Hostname_s\r\n    | where Product_s in ({Product});\r\nDevices\r\n| where TimeGenerated < ago(7d)\r\n| project\r\n    Hostname = Hostname_s,\r\n    Product = Product_s,\r\n    MachineType = MTM_s,\r\n    Serial = Serial_s,\r\n    LastReported = TimeGenerated\r\n| order by LastReported asc",
+              "size": 0,
+              "title": "Devices Not Reported in 7+ Days",
+              "noDataMessage": "All devices have reported within the last 7 days.",
+              "timeContextFromParameter": "TimeRange",
+              "showExportToExcel": true,
               "queryType": 0,
               "resourceType": "microsoft.operationalinsights/workspaces",
               "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "LastReported",
+                    "formatter": 6
+                  }
+                ],
+                "rowLimit": 10000,
+                "filter": true,
+                "labelSettings": [
+                  {
+                    "columnId": "Hostname",
+                    "label": "Computer Name"
+                  },
+                  {
+                    "columnId": "MachineType",
+                    "label": "Machine Type"
+                  },
+                  {
+                    "columnId": "LastReported",
+                    "label": "Last Reported"
+                  }
+                ]
+              }
+            },
+            "name": "StaleDevices"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "Overview"
+      },
+      "name": "Overview"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "Shows the update status from the most recent inventory of each device. Status values come from the **Lenovo_Updates** WMI class and depend on the tool that wrote them, such as Commercial Vantage, Lenovo Client Update, System Update, or Thin Installer. Select a device to view its updates."
+            },
+            "name": "UpdateStatusDescription"
+          },
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "6f0c2a7e-3d1b-4c55-9a8e-2b7d4f1e9c30",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "Status",
+                  "label": "Update Status",
+                  "type": 2,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "Lenovo_Device_Health_CL\r\n| summarize by Status_s\r\n| order by Status_s asc",
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "defaultValue": "value::all",
+                  "timeContext": {
+                    "durationMs": 2592000000
+                  },
+                  "timeContextFromParameter": "TimeRange",
+                  "queryType": 0,
+                  "resourceType": "microsoft.operationalinsights/workspaces",
+                  "value": [
+                    "value::all"
+                  ]
+                }
+              ],
+              "style": "pills",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "UpdateStatusParameters"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let Devices = Lenovo_Device_Properties_CL\r\n    | summarize arg_max(TimeGenerated, *) by Hostname_s\r\n    | where Product_s in ({Product});\r\nlet Updates = Lenovo_Device_Health_CL\r\n    | join kind=inner (\r\n        Lenovo_Device_Health_CL\r\n        | summarize TimeGenerated = max(TimeGenerated) by Hostname_s\r\n        ) on Hostname_s, TimeGenerated\r\n    | join kind=inner (Devices | project Hostname_s, Product_s, MTM_s) on Hostname_s;\r\nUpdates\r\n| where Status_s in ({Status})\r\n| summarize Updates = count() by Status_s",
+              "size": 3,
+              "title": "Updates by Status",
+              "noDataMessage": "No update data found. Verify devices have run the Remediation and that the Lenovo_Updates WMI class is populated.",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Installed",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "InstallSuccess",
+                    "color": "greenDark"
+                  },
+                  {
+                    "seriesName": "AlreadyInstalled",
+                    "color": "blue"
+                  },
+                  {
+                    "seriesName": "Applicable",
+                    "color": "orange"
+                  },
+                  {
+                    "seriesName": "NotInstalled",
+                    "color": "orange"
+                  },
+                  {
+                    "seriesName": "NotApplicable",
+                    "color": "gray"
+                  },
+                  {
+                    "seriesName": "InstallFailed",
+                    "color": "redBright"
+                  },
+                  {
+                    "seriesName": "DownloadFailed",
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "name": "UpdateStatusChart"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let Devices = Lenovo_Device_Properties_CL\r\n    | summarize arg_max(TimeGenerated, *) by Hostname_s\r\n    | where Product_s in ({Product});\r\nlet Updates = Lenovo_Device_Health_CL\r\n    | join kind=inner (\r\n        Lenovo_Device_Health_CL\r\n        | summarize TimeGenerated = max(TimeGenerated) by Hostname_s\r\n        ) on Hostname_s, TimeGenerated\r\n    | join kind=inner (Devices | project Hostname_s, Product_s, MTM_s) on Hostname_s;\r\nUpdates\r\n| where Status_s in ({Status})\r\n| summarize\r\n    Installed = countif(Status_s in ('Installed', 'InstallSuccess', 'AlreadyInstalled')),\r\n    Pending = countif(Status_s in ('Applicable', 'NotInstalled')),\r\n    Failed = countif(Status_s contains 'Fail'),\r\n    NotApplicable = countif(Status_s == 'NotApplicable'),\r\n    Total = count(),\r\n    LastReported = max(TimeGenerated)\r\n    by Hostname = Hostname_s, Product = Product_s, MachineType = MTM_s\r\n| order by Failed desc, Pending desc, Hostname asc",
+              "size": 0,
+              "title": "Updates by Device",
+              "noDataMessage": "No updates match the selected filters.",
+              "timeContextFromParameter": "TimeRange",
+              "exportFieldName": "Hostname",
+              "exportParameterName": "SelectedDevice",
+              "exportDefaultValue": "None",
+              "showExportToExcel": true,
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Pending",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "orange"
+                    }
+                  },
+                  {
+                    "columnMatch": "Failed",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "red"
+                    }
+                  },
+                  {
+                    "columnMatch": "LastReported",
+                    "formatter": 6
+                  }
+                ],
+                "rowLimit": 10000,
+                "filter": true,
                 "sortBy": [
                   {
-                    "itemKey": "PackageID_s",
+                    "itemKey": "$gen_heatmap_Pending_4",
                     "sortOrder": 2
                   }
                 ],
                 "labelSettings": [
                   {
-                    "columnId": "Hostname_s",
+                    "columnId": "Hostname",
                     "label": "Computer Name"
                   },
                   {
-                    "columnId": "MTM_s",
-                    "label": "MTM"
+                    "columnId": "MachineType",
+                    "label": "Machine Type"
                   },
                   {
-                    "columnId": "PackageID_s",
-                    "label": "PackageID"
+                    "columnId": "NotApplicable",
+                    "label": "Not Applicable"
                   },
                   {
-                    "columnId": "Title_s",
-                    "label": "Update"
-                  },
-                  {
-                    "columnId": "Lenovo_Device_Health_CL",
-                    "label": "Failure Count"
+                    "columnId": "LastReported",
+                    "label": "Last Reported"
                   }
                 ]
               },
               "sortBy": [
                 {
-                  "itemKey": "PackageID_s",
+                  "itemKey": "$gen_heatmap_Pending_4",
                   "sortOrder": 2
                 }
-              ],
-              "chartSettings": {
-                "seriesLabelSettings": [
-                  {
-                    "seriesName": "InstallSuccess",
-                    "label": "Updates Installed Successfully",
-                    "color": "green"
-                  },
-                  {
-                    "seriesName": "InstallFailed",
-                    "label": "Updates Failed to Install",
-                    "color": "red"
-                  },
-                  {
-                    "seriesName": "DownloadFailed",
-                    "label": "Updates Failed to Download",
-                    "color": "yellow"
-                  },
-                  {
-                    "seriesName": "NotApplicable",
-                    "label": "Not Applicable",
-                    "color": "gray"
-                  },
-                  {
-                    "seriesName": "AlreadyInstalled",
-                    "label": "Already Installed",
-                    "color": "blue"
-                  }
-                ]
-              }
-            },
-            "name": "Overall Update Status"
-          },
-          {
-            "type": 12,
-            "content": {
-              "version": "NotebookGroup/1.0",
-              "groupType": "editable",
-              "title": "Updates Successfully Installed (Last 30 Days)",
-              "expandable": true,
-              "expanded": true,
-              "items": [
-                {
-                  "type": 3,
-                  "content": {
-                    "version": "KqlItem/1.0",
-                    "query": "Lenovo_Device_Health_CL\r\n| where Status_s == 'InstallSuccess'\r\n| project\r\n    PackageID=PackageID_s\r\n    ,\r\n    DriverName=Title_s\r\n    ,\r\n    Version=Version_s\r\n    ,\r\n    Severity=Severity_s\r\n    ,\r\n    Status=Status_s\r\n    ,\r\n    TimeGenerated\r\n| join kind=inner\r\n    (\r\n    Lenovo_Device_Properties_CL\r\n    )\r\n    on TimeGenerated\r\n| summarize arg_max(TimeGenerated, *) by PackageID\r\n| project\r\n    PackageID\r\n    ,\r\n    DriverName\r\n    ,\r\n    Version\r\n    ,\r\n    Severity\r\n    ,\r\n    Hostname=Hostname_s\r\n    ,\r\n    Product=Product_s\r\n    ,\r\n    MachineType=MTM_s\r\n| order by Hostname",
-                    "size": 0,
-                    "timeContext": {
-                      "durationMs": 2592000000
-                    },
-                    "queryType": 0,
-                    "resourceType": "microsoft.operationalinsights/workspaces",
-                    "gridSettings": {
-                      "formatters": [
-                        {
-                          "columnMatch": "TimeGenerated",
-                          "formatter": 5
-                        },
-                        {
-                          "columnMatch": "Hostname_s",
-                          "formatter": 0,
-                          "formatOptions": {
-                            "customColumnWidthSetting": "26.1429ch"
-                          }
-                        }
-                      ],
-                      "filter": true
-                    },
-                    "sortBy": []
-                  },
-                  "name": "InstallSuccess"
-                }
               ]
             },
-            "name": "InstallSuccess"
+            "name": "UpdatesByDevice"
           },
           {
-            "type": 12,
+            "type": 3,
             "content": {
-              "version": "NotebookGroup/1.0",
-              "groupType": "editable",
-              "title": "Updates Already Installed (Last 30 Days)",
-              "expandable": true,
-              "expanded": true,
-              "items": [
-                {
-                  "type": 3,
-                  "content": {
-                    "version": "KqlItem/1.0",
-                    "query": "Lenovo_Device_Health_CL\r\n| where Status_s == 'AlreadyInstalled'\r\n| project\r\n    PackageID=PackageID_s\r\n    ,\r\n    DriverName=Title_s\r\n    ,\r\n    Version=Version_s\r\n    ,\r\n    Severity=Severity_s\r\n    ,\r\n    Status=Status_s\r\n    ,\r\n    TimeGenerated\r\n| join kind=inner\r\n    (\r\n    Lenovo_Device_Properties_CL\r\n    )\r\n    on TimeGenerated\r\n| summarize arg_max(TimeGenerated, *) by PackageID\r\n| project\r\n    PackageID\r\n    ,\r\n    DriverName\r\n    ,\r\n    Version\r\n    ,\r\n    Severity\r\n    ,\r\n    Hostname=Hostname_s\r\n    ,\r\n    Product=Product_s\r\n    ,\r\n    MachineType=MTM_s\r\n| order by Hostname\r\n",
-                    "size": 0,
-                    "timeContext": {
-                      "durationMs": 2592000000
-                    },
-                    "queryType": 0,
-                    "resourceType": "microsoft.operationalinsights/workspaces",
-                    "gridSettings": {
-                      "formatters": [
+              "version": "KqlItem/1.0",
+              "query": "let Devices = Lenovo_Device_Properties_CL\r\n    | summarize arg_max(TimeGenerated, *) by Hostname_s\r\n    | where Product_s in ({Product});\r\nlet Updates = Lenovo_Device_Health_CL\r\n    | join kind=inner (\r\n        Lenovo_Device_Health_CL\r\n        | summarize TimeGenerated = max(TimeGenerated) by Hostname_s\r\n        ) on Hostname_s, TimeGenerated\r\n    | join kind=inner (Devices | project Hostname_s, Product_s, MTM_s) on Hostname_s;\r\nUpdates\r\n| where Hostname_s == '{SelectedDevice}' and Status_s in ({Status})\r\n| order by case(Status_s contains 'Fail', 1, Status_s in ('Applicable', 'NotInstalled'), 2, Status_s == 'NotApplicable', 4, 3) asc, Title_s asc\r\n| project\r\n    Title = Title_s,\r\n    Version = Version_s,\r\n    Severity = Severity_s,\r\n    Status = Status_s,\r\n    PackageID = PackageID_s,\r\n    LastReported = TimeGenerated",
+              "size": 0,
+              "title": "Updates on {SelectedDevice}",
+              "noDataMessage": "No updates match the selected filters.",
+              "timeContextFromParameter": "TimeRange",
+              "showExportToExcel": true,
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Status",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
                         {
-                          "columnMatch": "TimeGenerated",
-                          "formatter": 5
-                        }
-                      ],
-                      "filter": true
-                    },
-                    "sortBy": []
-                  },
-                  "name": "AlreadyInstalled"
-                }
-              ]
-            },
-            "name": "AlreadyInstalled"
-          },
-          {
-            "type": 12,
-            "content": {
-              "version": "NotebookGroup/1.0",
-              "groupType": "editable",
-              "title": "Applicable Updates (Last 30 Days)",
-              "expandable": true,
-              "items": [
-                {
-                  "type": 3,
-                  "content": {
-                    "version": "KqlItem/1.0",
-                    "query": "Lenovo_Device_Health_CL\r\n| where Status_s == 'Applicable'\r\n| project\r\n    PackageID=PackageID_s\r\n    ,\r\n    DriverName=Title_s\r\n    ,\r\n    Version=Version_s\r\n    ,\r\n    Severity=Severity_s\r\n    ,\r\n    Status=Status_s\r\n    ,\r\n    TimeGenerated\r\n| join kind=inner\r\n    (\r\n    Lenovo_Device_Properties_CL\r\n    )\r\n    on TimeGenerated\r\n| summarize arg_max(TimeGenerated, *) by PackageID\r\n| project\r\n    PackageID\r\n    ,\r\n    DriverName\r\n    ,\r\n    Version\r\n    ,\r\n    Severity\r\n    ,\r\n    Hostname=Hostname_s\r\n    ,\r\n    Product=Product_s\r\n    ,\r\n    MachineType=MTM_s\r\n| order by Hostname",
-                    "size": 0,
-                    "timeContext": {
-                      "durationMs": 2592000000
-                    },
-                    "queryType": 0,
-                    "resourceType": "microsoft.operationalinsights/workspaces",
-                    "gridSettings": {
-                      "filter": true
-                    }
-                  },
-                  "name": "InstallFailed"
-                }
-              ]
-            },
-            "name": "ApplicableUpdates"
-          },
-          {
-            "type": 12,
-            "content": {
-              "version": "NotebookGroup/1.0",
-              "groupType": "editable",
-              "title": "Updates Failed to Install (Last 30 Days)",
-              "expandable": true,
-              "items": [
-                {
-                  "type": 3,
-                  "content": {
-                    "version": "KqlItem/1.0",
-                    "query": "Lenovo_Device_Health_CL\r\n| where Status_s == 'InstallFailed'\r\n| project\r\n    PackageID=PackageID_s\r\n    ,\r\n    DriverName=Title_s\r\n    ,\r\n    Version=Version_s\r\n    ,\r\n    Severity=Severity_s\r\n    ,\r\n    Status=Status_s\r\n    ,\r\n    TimeGenerated\r\n| join kind=inner\r\n    (\r\n    Lenovo_Device_Properties_CL\r\n    )\r\n    on TimeGenerated\r\n| summarize arg_max(TimeGenerated, *) by PackageID\r\n| project\r\n    PackageID\r\n    ,\r\n    DriverName\r\n    ,\r\n    Version\r\n    ,\r\n    Severity\r\n    ,\r\n    Hostname=Hostname_s\r\n    ,\r\n    Product=Product_s\r\n    ,\r\n    MachineType=MTM_s\r\n| order by Hostname",
-                    "size": 0,
-                    "timeContext": {
-                      "durationMs": 2592000000
-                    },
-                    "queryType": 0,
-                    "resourceType": "microsoft.operationalinsights/workspaces",
-                    "gridSettings": {
-                      "filter": true
-                    }
-                  },
-                  "name": "InstallFailed"
-                }
-              ]
-            },
-            "name": "InstallFailed"
-          },
-          {
-            "type": 12,
-            "content": {
-              "version": "NotebookGroup/1.0",
-              "groupType": "editable",
-              "title": "Updates Failed to Download (Last 30 Days)",
-              "expandable": true,
-              "loadType": "always",
-              "items": [
-                {
-                  "type": 3,
-                  "content": {
-                    "version": "KqlItem/1.0",
-                    "query": "Lenovo_Device_Health_CL\r\n| where Status_s == 'DownloadFailed'\r\n| project\r\n    PackageID=PackageID_s\r\n    ,\r\n    DriverName=Title_s\r\n    ,\r\n    Version=Version_s\r\n    ,\r\n    Severity=Severity_s\r\n    ,\r\n    Status=Status_s\r\n    ,\r\n    TimeGenerated\r\n| join kind=inner\r\n    (\r\n    Lenovo_Device_Properties_CL\r\n    )\r\n    on TimeGenerated\r\n| summarize arg_max(TimeGenerated, *) by PackageID\r\n| project\r\n    PackageID\r\n    ,\r\n    DriverName\r\n    ,\r\n    Version\r\n    ,\r\n    Severity\r\n    ,\r\n    Hostname=Hostname_s\r\n    ,\r\n    Product=Product_s\r\n    ,\r\n    MachineType=MTM_s\r\n| order by Hostname",
-                    "size": 0,
-                    "timeContext": {
-                      "durationMs": 2592000000
-                    },
-                    "queryType": 0,
-                    "resourceType": "microsoft.operationalinsights/workspaces",
-                    "gridSettings": {
-                      "labelSettings": [
-                        {
-                          "columnId": "PackageID_s",
-                          "label": "PackageID"
+                          "operator": "==",
+                          "thresholdValue": "Installed",
+                          "representation": "success",
+                          "text": "{0}{1}"
                         },
                         {
-                          "columnId": "Title_s",
-                          "label": "Update"
+                          "operator": "==",
+                          "thresholdValue": "InstallSuccess",
+                          "representation": "success",
+                          "text": "{0}{1}"
                         },
                         {
-                          "columnId": "Hostname_s",
-                          "label": "Computer Name"
+                          "operator": "==",
+                          "thresholdValue": "AlreadyInstalled",
+                          "representation": "success",
+                          "text": "{0}{1}"
                         },
                         {
-                          "columnId": "Product_s",
-                          "label": "Model"
+                          "operator": "==",
+                          "thresholdValue": "Applicable",
+                          "representation": "warning",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "NotInstalled",
+                          "representation": "warning",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "NotApplicable",
+                          "representation": "Unknown",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "InstallFailed",
+                          "representation": "critical",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "DownloadFailed",
+                          "representation": "critical",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "Blank",
+                          "text": "{0}{1}"
                         }
                       ]
                     }
                   },
-                  "name": "DownloadFailed"
-                }
-              ]
+                  {
+                    "columnMatch": "LastReported",
+                    "formatter": 6
+                  }
+                ],
+                "rowLimit": 10000,
+                "filter": true,
+                "labelSettings": [
+                  {
+                    "columnId": "Title",
+                    "label": "Update"
+                  },
+                  {
+                    "columnId": "PackageID",
+                    "label": "Package ID"
+                  },
+                  {
+                    "columnId": "LastReported",
+                    "label": "Last Reported"
+                  }
+                ]
+              }
             },
-            "name": "DownloadFailed"
+            "conditionalVisibility": {
+              "parameterName": "SelectedDevice",
+              "comparison": "isNotEqualTo",
+              "value": "None"
+            },
+            "name": "UpdatesForDevice"
           }
         ]
       },
@@ -340,130 +533,335 @@
       "content": {
         "version": "NotebookGroup/1.0",
         "groupType": "editable",
-        "title": "Battery Details",
         "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "Compares the installed BIOS with the latest version in the Lenovo catalog. The CVE list comes from the readme of the latest BIOS and shows the accumulated vulnerabilities that have been addressed through BIOS updates. Review the [Lenovo Product Security Advisories](https://support.lenovo.com/product_security/ps500001-lenovo-product-security-advisories) for details."
+            },
+            "name": "BiosDescription"
+          },
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "7a1d3b8f-4e2c-4d66-8b9f-3c8e5a2f0d41",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "BiosStatusFilter",
+                  "label": "BIOS Status",
+                  "type": 2,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "Lenovo_Device_Properties_CL\r\n| summarize arg_max(TimeGenerated, AvailableBiosVersion_s) by Hostname_s\r\n| extend BiosStatus = case(\r\n    AvailableBiosVersion_s contains 'is current', 'Current',\r\n    AvailableBiosVersion_s contains 'Available version', 'Out of Date',\r\n    'Unavailable')\r\n| summarize by BiosStatus\r\n| order by BiosStatus asc",
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "defaultValue": "value::all",
+                  "timeContext": {
+                    "durationMs": 2592000000
+                  },
+                  "timeContextFromParameter": "TimeRange",
+                  "queryType": 0,
+                  "resourceType": "microsoft.operationalinsights/workspaces",
+                  "value": [
+                    "Out of Date"
+                  ]
+                }
+              ],
+              "style": "pills",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "BiosParameters"
+          },
           {
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "Lenovo_Device_Properties_CL\r\n| where\r\n    BatteryHealth_s == 'Green'\r\n    or\r\n    BatteryHealth_s == 'Red'\r\n    or\r\n    BatteryHealth_s == 'Battery Data Unavailable'\r\n| distinct\r\n    BatteryHealth_s\r\n    ,\r\n    Hostname_s\r\n| summarize Lenovo_Device_Health_CL = count() by BatteryHealth_s\r\n| render piechart",
-              "size": 3,
-              "title": "Last 30 Days",
-              "timeContext": {
-                "durationMs": 2592000000
-              },
+              "query": "let Devices = Lenovo_Device_Properties_CL\r\n    | summarize arg_max(TimeGenerated, *) by Hostname_s\r\n    | where Product_s in ({Product});\r\nDevices\r\n| extend BiosStatus = case(\r\n    AvailableBiosVersion_s contains 'is current', 'Current',\r\n    AvailableBiosVersion_s contains 'Available version', 'Out of Date',\r\n    'Unavailable')\r\n| where BiosStatus in ({BiosStatusFilter})\r\n| summarize Devices = count() by Product_s, BiosStatus\r\n| order by Product_s asc",
+              "size": 0,
+              "title": "BIOS Status by Model",
+              "noDataMessage": "No BIOS data found.",
+              "timeContextFromParameter": "TimeRange",
               "queryType": 0,
               "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "categoricalbar",
               "chartSettings": {
+                "xAxis": "Product_s",
+                "yAxis": [
+                  "Devices"
+                ],
+                "group": "BiosStatus",
+                "createOtherGroup": 0,
+                "showLegend": true,
                 "seriesLabelSettings": [
                   {
-                    "seriesName": "Green",
-                    "label": "Batteries in Good Health",
+                    "seriesName": "Current",
                     "color": "green"
                   },
                   {
-                    "seriesName": "Red",
-                    "label": "Batteries in Bad Health",
-                    "color": "red"
+                    "seriesName": "Out of Date",
+                    "color": "orange"
+                  },
+                  {
+                    "seriesName": "Unavailable",
+                    "color": "gray"
                   }
                 ]
               }
             },
-            "conditionalVisibility": {
-              "parameterName": "Tab",
-              "comparison": "isEqualTo",
-              "value": "Battery"
-            },
-            "name": "Battery Health"
+            "name": "BiosStatusChart"
           },
           {
-            "type": 12,
+            "type": 3,
             "content": {
-              "version": "NotebookGroup/1.0",
-              "groupType": "editable",
-              "title": "Batteries in Good Health (Last 30 Days)",
-              "expandable": true,
-              "expanded": true,
-              "loadType": "always",
-              "items": [
-                {
-                  "type": 3,
-                  "content": {
-                    "version": "KqlItem/1.0",
-                    "query": "Lenovo_Device_Properties_CL\r\n| where BatteryHealth_s == 'Green'\r\n| distinct\r\n    Hostname=Hostname_s\r\n    ,\r\n    MachineType=MTM_s\r\n    ,\r\n    Product=Product_s",
-                    "size": 0,
-                    "timeContext": {
-                      "durationMs": 2592000000
-                    },
-                    "queryType": 0,
-                    "resourceType": "microsoft.operationalinsights/workspaces",
-                    "gridSettings": {
-                      "filter": true
+              "version": "KqlItem/1.0",
+              "query": "let Devices = Lenovo_Device_Properties_CL\r\n    | summarize arg_max(TimeGenerated, *) by Hostname_s\r\n    | where Product_s in ({Product});\r\nDevices\r\n| extend BiosStatus = case(\r\n    AvailableBiosVersion_s contains 'is current', 'Current',\r\n    AvailableBiosVersion_s contains 'Available version', 'Out of Date',\r\n    'Unavailable')\r\n| where BiosStatus in ({BiosStatusFilter})\r\n| extend CVEList = extract_all(@'(CVE-\\d{4}-\\d+)', CVE_s)\r\n| order by case(BiosStatus == 'Out of Date', 1, BiosStatus == 'Unavailable', 2, 3) asc, coalesce(array_length(CVEList), 0) desc, Hostname_s asc\r\n| project\r\n    Hostname = Hostname_s,\r\n    Product = Product_s,\r\n    MachineType = MTM_s,\r\n    BiosStatus,\r\n    InstalledBios = InstalledBiosVersion_s,\r\n    AvailableBios = extract(@'Available version: (\\S+)', 1, AvailableBiosVersion_s),\r\n    Released = extract(@'released ([^;]+)', 1, AvailableBiosVersion_s),\r\n    CVECount = coalesce(array_length(CVEList), 0),\r\n    CVEs = strcat_array(CVEList, ', '),\r\n    LastReported = TimeGenerated",
+              "size": 0,
+              "title": "BIOS and CVE Details",
+              "noDataMessage": "No devices match the selected BIOS status.",
+              "timeContextFromParameter": "TimeRange",
+              "showExportToExcel": true,
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "BiosStatus",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Current",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Out of Date",
+                          "representation": "warning",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Unavailable",
+                          "representation": "Unknown",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "Blank",
+                          "text": "{0}{1}"
+                        }
+                      ]
                     }
                   },
-                  "name": "Battery Health-Good"
-                }
-              ]
-            },
-            "name": "BatteryHealth-Good"
-          },
-          {
-            "type": 12,
-            "content": {
-              "version": "NotebookGroup/1.0",
-              "groupType": "editable",
-              "title": "Batteries in Bad Health (Last 30 Days)",
-              "expandable": true,
-              "loadType": "always",
-              "items": [
-                {
-                  "type": 3,
-                  "content": {
-                    "version": "KqlItem/1.0",
-                    "query": "Lenovo_Device_Properties_CL\r\n| where BatteryHealth_s == 'Red'\r\n| distinct\r\n    Hostname=Hostname_s\r\n    ,\r\n    MachineType=MTM_s\r\n    ,\r\n    Product=Product_s",
-                    "size": 0,
-                    "timeContext": {
-                      "durationMs": 2592000000
-                    },
-                    "queryType": 0,
-                    "resourceType": "microsoft.operationalinsights/workspaces"
-                  },
-                  "name": "BatteryHealth-Bad"
-                }
-              ]
-            },
-            "name": "BatteryHealth-Bad"
-          },
-          {
-            "type": 12,
-            "content": {
-              "version": "NotebookGroup/1.0",
-              "groupType": "editable",
-              "title": "Systems With No Battery Data (Last 30 Days)",
-              "expandable": true,
-              "expanded": true,
-              "loadType": "always",
-              "items": [
-                {
-                  "type": 3,
-                  "content": {
-                    "version": "KqlItem/1.0",
-                    "query": "Lenovo_Device_Properties_CL\r\n| where BatteryHealth_s == 'Battery Data Unavailable'\r\n| distinct\r\n    Hostname=Hostname_s\r\n    ,\r\n    MachineType=MTM_s\r\n    ,\r\n    Product=Product_s\r\n    ,\r\n    Serial=Serial_s",
-                    "size": 0,
-                    "timeContext": {
-                      "durationMs": 2592000000
-                    },
-                    "queryType": 0,
-                    "resourceType": "microsoft.operationalinsights/workspaces",
-                    "gridSettings": {
-                      "filter": true
+                  {
+                    "columnMatch": "CVECount",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "orange"
                     }
                   },
-                  "name": "BatteryHealth-Unavailable"
-                }
-              ]
+                  {
+                    "columnMatch": "LastReported",
+                    "formatter": 6
+                  }
+                ],
+                "rowLimit": 10000,
+                "filter": true,
+                "labelSettings": [
+                  {
+                    "columnId": "Hostname",
+                    "label": "Computer Name"
+                  },
+                  {
+                    "columnId": "MachineType",
+                    "label": "Machine Type"
+                  },
+                  {
+                    "columnId": "BiosStatus",
+                    "label": "BIOS Status"
+                  },
+                  {
+                    "columnId": "InstalledBios",
+                    "label": "Installed BIOS"
+                  },
+                  {
+                    "columnId": "AvailableBios",
+                    "label": "Available BIOS"
+                  },
+                  {
+                    "columnId": "CVECount",
+                    "label": "CVE Count"
+                  },
+                  {
+                    "columnId": "CVEs",
+                    "label": "CVEs Addressed by Latest BIOS"
+                  },
+                  {
+                    "columnId": "LastReported",
+                    "label": "Last Reported"
+                  }
+                ]
+              }
             },
-            "name": "BatteryHealth-Unavailable"
+            "name": "BiosByDevice"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "BIOS"
+      },
+      "name": "BIOS"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "Battery health from the most recent inventory of each ThinkPad. Devices show **Unavailable** when the Commercial Vantage battery policy is not enabled. Select a slice to filter the list, and select it again to clear the filter."
+            },
+            "name": "BatteryDescription"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let Devices = Lenovo_Device_Properties_CL\r\n    | summarize arg_max(TimeGenerated, *) by Hostname_s\r\n    | where Product_s in ({Product});\r\nDevices\r\n| where isnotempty(BatteryHealth_s)\r\n| extend BatteryHealth = iff(BatteryHealth_s == 'Battery Data Unavailable', 'Unavailable', BatteryHealth_s)\r\n| summarize Devices = count() by BatteryHealth",
+              "size": 3,
+              "title": "Battery Health",
+              "noDataMessage": "No battery data found. Battery health is collected from ThinkPad devices only.",
+              "timeContextFromParameter": "TimeRange",
+              "exportFieldName": "series",
+              "exportParameterName": "BatteryHealth",
+              "exportDefaultValue": "All",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Green",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Yellow",
+                    "color": "yellow"
+                  },
+                  {
+                    "seriesName": "Red",
+                    "color": "redBright"
+                  },
+                  {
+                    "seriesName": "Unavailable",
+                    "color": "gray"
+                  }
+                ]
+              }
+            },
+            "customWidth": "40",
+            "name": "BatteryHealthChart"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let Devices = Lenovo_Device_Properties_CL\r\n    | summarize arg_max(TimeGenerated, *) by Hostname_s\r\n    | where Product_s in ({Product});\r\nDevices\r\n| where isnotempty(BatteryHealth_s)\r\n| extend BatteryHealth = iff(BatteryHealth_s == 'Battery Data Unavailable', 'Unavailable', BatteryHealth_s)\r\n| where '{BatteryHealth}' == 'All' or BatteryHealth == '{BatteryHealth}'\r\n| order by case(BatteryHealth == 'Red', 1, BatteryHealth == 'Yellow', 2, BatteryHealth == 'Unavailable', 3, 4) asc, Hostname_s asc\r\n| project\r\n    Hostname = Hostname_s,\r\n    Product = Product_s,\r\n    MachineType = MTM_s,\r\n    Serial = Serial_s,\r\n    BatteryHealth,\r\n    LastReported = TimeGenerated",
+              "size": 0,
+              "title": "Devices",
+              "noDataMessage": "No devices match the selected battery health.",
+              "timeContextFromParameter": "TimeRange",
+              "showExportToExcel": true,
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "BatteryHealth",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Green",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Yellow",
+                          "representation": "warning",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Red",
+                          "representation": "critical",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Unavailable",
+                          "representation": "Unknown",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "Blank",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "LastReported",
+                    "formatter": 6
+                  }
+                ],
+                "rowLimit": 10000,
+                "filter": true,
+                "labelSettings": [
+                  {
+                    "columnId": "Hostname",
+                    "label": "Computer Name"
+                  },
+                  {
+                    "columnId": "MachineType",
+                    "label": "Machine Type"
+                  },
+                  {
+                    "columnId": "BatteryHealth",
+                    "label": "Battery Health"
+                  },
+                  {
+                    "columnId": "LastReported",
+                    "label": "Last Reported"
+                  }
+                ]
+              }
+            },
+            "customWidth": "60",
+            "name": "BatteryByDevice"
           }
         ]
       },
@@ -479,154 +877,168 @@
       "content": {
         "version": "NotebookGroup/1.0",
         "groupType": "editable",
-        "title": "Warranty Details",
         "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "Warranty end dates from the most recent inventory of each device. Devices show **Unavailable** when the Commercial Vantage warranty policy is not enabled. Select a slice to filter the list, and select it again to clear the filter."
+            },
+            "name": "WarrantyDescription"
+          },
           {
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "Lenovo_Device_Properties_CL\r\n| where WarrantyEnd_s != '-null-'\r\n| extend WarrantyEnd_s = substring(WarrantyEnd_s, 0, 4)\r\n| summarize by WarrantyEnd_s, Hostname_s\r\n| summarize Lenovo_Device_Health_CL = count() by WarrantyEnd_s",
-              "size": 1,
-              "title": "By Year",
-              "timeContext": {
-                "durationMs": 2592000000
-              },
+              "query": "let Devices = Lenovo_Device_Properties_CL\r\n    | summarize arg_max(TimeGenerated, *) by Hostname_s\r\n    | where Product_s in ({Product});\r\nDevices\r\n| extend EndDate = todatetime(WarrantyEnd_s)\r\n| extend WarrantyStatus = case(\r\n    isnull(EndDate), 'Unavailable',\r\n    EndDate < now(), 'Expired',\r\n    EndDate < now(90d), 'Expires Within 90 Days',\r\n    EndDate < now(365d), 'Expires Within 1 Year',\r\n    'More Than 1 Year')\r\n| summarize Devices = count() by WarrantyStatus",
+              "size": 3,
+              "title": "Warranty Status",
+              "noDataMessage": "No warranty data found.",
+              "timeContextFromParameter": "TimeRange",
+              "exportFieldName": "series",
+              "exportParameterName": "WarrantyStatus",
+              "exportDefaultValue": "All",
               "queryType": 0,
               "resourceType": "microsoft.operationalinsights/workspaces",
-              "visualization": "categoricalbar",
-              "gridSettings": {
-                "sortBy": [
-                  {
-                    "itemKey": "WarrantyEnd_s",
-                    "sortOrder": 2
-                  }
-                ]
-              },
-              "sortBy": [
-                {
-                  "itemKey": "WarrantyEnd_s",
-                  "sortOrder": 2
-                }
-              ],
-              "tileSettings": {
-                "showBorder": false,
-                "titleContent": {
-                  "columnMatch": "WarrantyEnd_s",
-                  "formatter": 1
-                },
-                "leftContent": {
-                  "columnMatch": "Lenovo_Device_Health_CL",
-                  "formatter": 12,
-                  "formatOptions": {
-                    "palette": "auto"
-                  },
-                  "numberFormat": {
-                    "unit": 17,
-                    "options": {
-                      "maximumSignificantDigits": 3,
-                      "maximumFractionDigits": 2
-                    }
-                  }
-                }
-              },
-              "graphSettings": {
-                "type": 0,
-                "topContent": {
-                  "columnMatch": "WarrantyEnd_s",
-                  "formatter": 1
-                },
-                "centerContent": {
-                  "columnMatch": "Lenovo_Device_Health_CL",
-                  "formatter": 1,
-                  "numberFormat": {
-                    "unit": 17,
-                    "options": {
-                      "maximumSignificantDigits": 3,
-                      "maximumFractionDigits": 2
-                    }
-                  }
-                }
-              },
+              "visualization": "piechart",
               "chartSettings": {
-                "group": "WarrantyEnd_s",
-                "createOtherGroup": null,
-                "showMetrics": false,
-                "showLegend": true,
                 "seriesLabelSettings": [
                   {
-                    "seriesName": "Warr",
-                    "label": "Warranty Missing"
+                    "seriesName": "Expired",
+                    "color": "redBright"
+                  },
+                  {
+                    "seriesName": "Expires Within 90 Days",
+                    "color": "orange"
+                  },
+                  {
+                    "seriesName": "Expires Within 1 Year",
+                    "color": "yellow"
+                  },
+                  {
+                    "seriesName": "More Than 1 Year",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Unavailable",
+                    "color": "gray"
                   }
                 ]
-              },
-              "mapSettings": {
-                "locInfo": "LatLong",
-                "sizeSettings": "Lenovo_Device_Health_CL",
-                "sizeAggregation": "Sum",
-                "legendMetric": "Lenovo_Device_Health_CL",
-                "legendAggregation": "Sum",
-                "itemColorSettings": {
-                  "type": "heatmap",
-                  "colorAggregation": "Sum",
-                  "nodeColorField": "Lenovo_Device_Health_CL",
-                  "heatmapPalette": "greenRed"
-                }
               }
             },
-            "name": "Warranty Expiration"
+            "customWidth": "50",
+            "name": "WarrantyStatusChart"
           },
           {
-            "type": 12,
+            "type": 3,
             "content": {
-              "version": "NotebookGroup/1.0",
-              "groupType": "editable",
-              "title": "Warranty Expiration for All Devices",
-              "expandable": true,
-              "expanded": true,
-              "items": [
-                {
-                  "type": 3,
-                  "content": {
-                    "version": "KqlItem/1.0",
-                    "query": "Lenovo_Device_Properties_CL\r\n| distinct\r\n    WarrantyEnd=WarrantyEnd_s\r\n    ,\r\n    Hostname=Hostname_s\r\n    ,\r\n    MachineType=MTM_s\r\n    ,\r\n    Product=Product_s\r\n    ,\r\n    Serial=Serial_s\r\n| where WarrantyEnd != '-null-'\r\n| where isnotempty(WarrantyEnd)\r\n| sort by WarrantyEnd asc\r\n    ",
-                    "size": 0,
-                    "timeContext": {
-                      "durationMs": 2592000000
-                    },
-                    "queryType": 0,
-                    "resourceType": "microsoft.operationalinsights/workspaces",
-                    "gridSettings": {
-                      "formatters": [
+              "version": "KqlItem/1.0",
+              "query": "let Devices = Lenovo_Device_Properties_CL\r\n    | summarize arg_max(TimeGenerated, *) by Hostname_s\r\n    | where Product_s in ({Product});\r\nDevices\r\n| extend EndDate = todatetime(WarrantyEnd_s)\r\n| where isnotnull(EndDate)\r\n| summarize Devices = count() by Year = tostring(getyear(EndDate))\r\n| order by Year asc",
+              "size": 3,
+              "title": "Warranty End by Year",
+              "noDataMessage": "No warranty data found.",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "barchart"
+            },
+            "customWidth": "50",
+            "name": "WarrantyByYear"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let Devices = Lenovo_Device_Properties_CL\r\n    | summarize arg_max(TimeGenerated, *) by Hostname_s\r\n    | where Product_s in ({Product});\r\nDevices\r\n| extend EndDate = todatetime(WarrantyEnd_s)\r\n| extend WarrantyStatus = case(\r\n    isnull(EndDate), 'Unavailable',\r\n    EndDate < now(), 'Expired',\r\n    EndDate < now(90d), 'Expires Within 90 Days',\r\n    EndDate < now(365d), 'Expires Within 1 Year',\r\n    'More Than 1 Year')\r\n| where '{WarrantyStatus}' == 'All' or WarrantyStatus == '{WarrantyStatus}'\r\n| project\r\n    Hostname = Hostname_s,\r\n    Product = Product_s,\r\n    MachineType = MTM_s,\r\n    Serial = Serial_s,\r\n    WarrantyStatus,\r\n    WarrantyEnd = format_datetime(EndDate, 'yyyy-MM-dd'),\r\n    DaysRemaining = datetime_diff('day', EndDate, now()),\r\n    LastReported = TimeGenerated\r\n| order by DaysRemaining asc nulls last, Hostname asc",
+              "size": 0,
+              "title": "Warranty by Device",
+              "noDataMessage": "No devices match the selected warranty status.",
+              "timeContextFromParameter": "TimeRange",
+              "showExportToExcel": true,
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "WarrantyStatus",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
                         {
-                          "columnMatch": "WarrantyEnd",
-                          "formatter": 0,
-                          "tooltipFormat": {
-                            "tooltip": "If Warranty is unavailable, enable LCV policy to write warranty information to WMI"
-                          }
+                          "operator": "==",
+                          "thresholdValue": "Expired",
+                          "representation": "critical",
+                          "text": "{0}{1}"
                         },
                         {
-                          "columnMatch": "Hostname_s",
-                          "formatter": 0,
-                          "formatOptions": {
-                            "customColumnWidthSetting": "23.1429ch"
-                          }
+                          "operator": "==",
+                          "thresholdValue": "Expires Within 90 Days",
+                          "representation": "warning",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Expires Within 1 Year",
+                          "representation": "info",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "More Than 1 Year",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Unavailable",
+                          "representation": "Unknown",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "Blank",
+                          "text": "{0}{1}"
                         }
-                      ],
-                      "filter": true
-                    },
-                    "sortBy": [],
-                    "tileSettings": {
-                      "showBorder": false
-                    },
-                    "graphSettings": {
-                      "type": 0
+                      ]
                     }
                   },
-                  "name": "WarrantyExpiration"
-                }
-              ]
+                  {
+                    "columnMatch": "LastReported",
+                    "formatter": 6
+                  }
+                ],
+                "rowLimit": 10000,
+                "filter": true,
+                "labelSettings": [
+                  {
+                    "columnId": "Hostname",
+                    "label": "Computer Name"
+                  },
+                  {
+                    "columnId": "MachineType",
+                    "label": "Machine Type"
+                  },
+                  {
+                    "columnId": "WarrantyStatus",
+                    "label": "Warranty Status"
+                  },
+                  {
+                    "columnId": "WarrantyEnd",
+                    "label": "Warranty End"
+                  },
+                  {
+                    "columnId": "DaysRemaining",
+                    "label": "Days Remaining"
+                  },
+                  {
+                    "columnId": "LastReported",
+                    "label": "Last Reported"
+                  }
+                ]
+              }
             },
-            "name": "WarrantyExpiration"
+            "name": "WarrantyByDevice"
           }
         ]
       },
@@ -636,179 +1048,6 @@
         "value": "Warranty"
       },
       "name": "Warranty"
-    },
-    {
-      "type": 3,
-      "content": {
-        "version": "KqlItem/1.0",
-        "query": "Lenovo_Device_Properties_CL\r\n| summarize arg_max(TimeGenerated, *) by Hostname_s\r\n| where AvailableBiosVersion_s contains 'Current'\r\n| summarize Lenovo_Device_Properties_CL = count() by Product_s",
-        "size": 4,
-        "title": "Current Level - Count by Model",
-        "timeContext": {
-          "durationMs": 2592000000
-        },
-        "queryType": 0,
-        "resourceType": "microsoft.operationalinsights/workspaces",
-        "visualization": "tiles",
-        "tileSettings": {
-          "titleContent": {
-            "columnMatch": "Product_s",
-            "formatter": 1
-          },
-          "leftContent": {
-            "columnMatch": "Lenovo_Device_Properties_CL",
-            "formatter": 12,
-            "formatOptions": {
-              "palette": "auto"
-            },
-            "numberFormat": {
-              "unit": 17,
-              "options": {
-                "maximumSignificantDigits": 3,
-                "maximumFractionDigits": 2
-              }
-            }
-          },
-          "showBorder": true
-        },
-        "graphSettings": {
-          "type": 0,
-          "topContent": {
-            "columnMatch": "Product_s",
-            "formatter": 1
-          },
-          "centerContent": {
-            "columnMatch": "Lenovo_Device_Properties_CL",
-            "formatter": 1,
-            "numberFormat": {
-              "unit": 17,
-              "options": {
-                "maximumSignificantDigits": 3,
-                "maximumFractionDigits": 2
-              }
-            }
-          }
-        }
-      },
-      "conditionalVisibility": {
-        "parameterName": "Tab",
-        "comparison": "isEqualTo",
-        "value": "Bios"
-      },
-      "name": "CurrentBios"
-    },
-    {
-      "type": 3,
-      "content": {
-        "version": "KqlItem/1.0",
-        "query": "Lenovo_Device_Properties_CL\r\n| summarize arg_max(TimeGenerated, *) by Hostname_s\r\n| where AvailableBiosVersion_s !contains 'Current'\r\n| summarize Lenovo_Device_Properties_CL = count() by Product_s",
-        "size": 4,
-        "title": "BIOS Out of Date - Count by Model",
-        "noDataMessageStyle": 4,
-        "timeContext": {
-          "durationMs": 2592000000
-        },
-        "queryType": 0,
-        "resourceType": "microsoft.operationalinsights/workspaces",
-        "visualization": "tiles",
-        "gridSettings": {
-          "sortBy": [
-            {
-              "itemKey": "Product_s",
-              "sortOrder": 1
-            }
-          ]
-        },
-        "sortBy": [
-          {
-            "itemKey": "Product_s",
-            "sortOrder": 1
-          }
-        ],
-        "tileSettings": {
-          "titleContent": {
-            "columnMatch": "Product_s",
-            "formatter": 1
-          },
-          "leftContent": {
-            "columnMatch": "Lenovo_Device_Properties_CL",
-            "formatter": 12,
-            "formatOptions": {
-              "palette": "auto"
-            },
-            "numberFormat": {
-              "unit": 17,
-              "options": {
-                "maximumSignificantDigits": 3,
-                "maximumFractionDigits": 2
-              }
-            }
-          },
-          "showBorder": true
-        },
-        "chartSettings": {
-          "seriesLabelSettings": [
-            {
-              "seriesName": "Other",
-              "label": "Current"
-            }
-          ]
-        }
-      },
-      "conditionalVisibility": {
-        "parameterName": "Tab",
-        "comparison": "isEqualTo",
-        "value": "Bios"
-      },
-      "name": "OutdatedBios"
-    },
-    {
-      "type": 12,
-      "content": {
-        "version": "NotebookGroup/1.0",
-        "groupType": "editable",
-        "title": "BIOS and CVE Information",
-        "expandable": true,
-        "expanded": true,
-        "items": [
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "Lenovo_Device_Properties_CL\r\n| summarize arg_max(TimeGenerated, *) by Hostname_s\r\n| distinct\r\n    InstalledBiosVersion_s\r\n    ,\r\n    Hostname_s\r\n    ,\r\n    Product_s\r\n    ,\r\n    MTM_s\r\n    ,\r\n    CVE_s\r\n    ,\r\n    AvailableBiosVersion_s\r\n| project\r\n    ComputerName=Hostname_s\r\n    ,\r\n    Product=Product_s\r\n    ,\r\n    MachineType=MTM_s\r\n    ,\r\n    InstalledBiosVersion=InstalledBiosVersion_s\r\n    ,\r\n    CVEs=CVE_s\r\n    ,\r\n    AvailableBIOS=AvailableBiosVersion_s",
-              "size": 0,
-              "title": "Last 30 Days",
-              "timeContext": {
-                "durationMs": 2592000000
-              },
-              "queryType": 0,
-              "resourceType": "microsoft.operationalinsights/workspaces",
-              "gridSettings": {
-                "filter": true,
-                "sortBy": [
-                  {
-                    "itemKey": "Product",
-                    "sortOrder": 1
-                  }
-                ]
-              },
-              "sortBy": [
-                {
-                  "itemKey": "Product",
-                  "sortOrder": 1
-                }
-              ]
-            },
-            "name": "BiosVersion"
-          }
-        ]
-      },
-      "conditionalVisibility": {
-        "parameterName": "Tab",
-        "comparison": "isEqualTo",
-        "value": "Bios"
-      },
-      "name": "BIOS"
     }
   ],
   "fallbackResourceIds": [
